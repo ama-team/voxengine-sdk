@@ -1,0 +1,34 @@
+{
+  "name": "@ama-team/voxengine-sdk",
+  "version": "0.1.0",
+  "description": "Bundle of helpers for VoxEngine scenario scripts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "babel --presets es2015,stage-0 -d lib src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ama-team/voxengine-sdk.git"
+  },
+  "keywords": [
+    "voximplant"
+  ],
+  "author": "AMA Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ama-team/voxengine-sdk/issues"
+  },
+  "homepage": "https://github.com/ama-team/voxengine-sdk#readme",
+  "dependencies": {
+    "@ama-team/voxengine-definitions": "git://github.com/ama-team/voxengine-definitions.git#dev",
+    "debug": "^2.3.2",
+    "promise": "^7.1.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-stage-0": "^6.16.0",
+    "karma-allure-reporter": "^1.4.4"
+  }
+}

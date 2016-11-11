@@ -1,0 +1,7 @@
+# Package burden
+/node_modules
+/lib
+npm-debug.log
+
+# IDE Files
+.idea
