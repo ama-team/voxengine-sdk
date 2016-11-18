@@ -1,7 +1,9 @@
 # Package burden
 /node_modules
-/lib
 npm-debug.log
+
+# Build files
+test-report
 
 # IDE Files
 .idea
