@@ -1,6 +1,7 @@
 # Package burden
 /node_modules
 npm-debug.log
+test
 
 # Build files
 report

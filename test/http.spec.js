@@ -35,7 +35,7 @@ global.Net = {HttpRequestOptions: function () {
 
 chai.use(chaiPromised);
 
-describe('http-client', function () {
+describe('/http-client.js', function () {
     describe('.rest', function () {
 
         it('should not use methodOverrideHeader on GET request', function () {

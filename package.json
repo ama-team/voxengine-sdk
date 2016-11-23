@@ -4,8 +4,13 @@
   "description": "Bundle of helpers for VoxEngine scenario scripts",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha",
-    "test-coverage": "node_modules/.bin/istanbul cover _mocha --config .istanbul.yml"
+    "clean": "rm -rf report",
+    "pretest": "npm run clean",
+    "test": "node_modules/.bin/istanbul cover _mocha --config .istanbul.yml **/*.js",
+    "test:ignore": "npm run test || true",
+    "test:report": "npm run test:ignore && npm run allure:report",
+    "allure:report": "allure generate -o report/allure -- report/allure-results",
+    "allure:open": "allure report open -o report/allure"
   },
   "repository": {
     "type": "git",
@@ -32,6 +37,7 @@
     "mocha": "^3.1.2",
     "mocha-allure-reporter": "^1.2.4",
     "mocha-multi": "^0.9.1",
+    "mocha-multi-reporters": "^1.1.1",
     "sinon": "^1.17.6",
     "sinon-as-promised": "^4.0.2"
   }

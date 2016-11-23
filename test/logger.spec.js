@@ -8,7 +8,7 @@ var sinon = require('sinon'),
 
 chai.use(chaiString);
 
-describe('logger', function () {
+describe('/logger.js', function () {
     describe('.slf4j', function () {
         var testMessage = 'Hey there, spectacular';
 
