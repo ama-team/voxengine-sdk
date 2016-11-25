@@ -3,27 +3,10 @@ var sinon = require('sinon'),
     should = chai.should(),
     assert = chai.assert,
     chaiPromised = require('chai-as-promised'),
-    clients = require('../lib/http'),
-    HttpMethod = clients.HttpMethod,
-    transportFactory = function () {
-        var stub = sinon.stub(),
-            returnValue;
-        for (var i = 0; i < arguments.length; i++) {
-            returnValue = arguments[i];
-            returnValue.headers = returnValue.headers || {};
-            stub.onCall(i).returns(Promise.resolve(returnValue));
-        }
-        return stub;
-    },
-    /**
-     * @param transport
-     * @param [settings]
-     * @return {RestClient}
-     */
-    clientFactory = function (transport, settings) {
-        settings = settings || {};
-        return new clients.rest(transport, settings);
-    };
+    clients = require('../../lib/http'),
+    HttpMethod = clients.HttpMethod;
+
+chai.use(chaiPromised);
 
 // todo: not good
 //noinspection JSUnusedGlobalSymbols
@@ -33,9 +16,28 @@ global.Net = {HttpRequestOptions: function () {
     this.method = null;
 }};
 
-chai.use(chaiPromised);
 
 describe('/http-client.js', function () {
+    var transportFactory = function () {
+            var stub = sinon.stub(),
+                returnValue;
+            for (var i = 0; i < arguments.length; i++) {
+                returnValue = arguments[i];
+                returnValue.headers = returnValue.headers || {};
+                stub.onCall(i).returns(Promise.resolve(returnValue));
+            }
+            return stub;
+        },
+        /**
+         * @param transport
+         * @param [settings]
+         * @return {RestClient}
+         */
+        clientFactory = function (transport, settings) {
+            settings = settings || {};
+            return new clients.rest(transport, settings);
+        };
+
     describe('.rest', function () {
 
         it('should not use methodOverrideHeader on GET request', function () {

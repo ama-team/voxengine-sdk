@@ -92,15 +92,28 @@ built code would be injected directly in VoxImplant scenarios, which, in
 turn, do not support ES6 yet, and transpiling would dramatically harden
 bug hunt.
 
+## Testing
+
+This package is using Istanbul for recording coverage metrics and 
+Allure framework for reporting. If you want full-blown feedback,
+use `npm run test:report` to generate Allure report (don't forget to 
+install [allure-commandline][allure-commandline] before), it will be 
+placed in `report/allure` directory.
+
 ## Anything else?
 
-We have [@ama-team/voxengine-definitions](./voxengine-definitions)
-package that helps with autocompletion. Also, 
-[scenario framework](./voxengine-scenario-framework) and 
-[script publishing tool](./voximplant-publisher) were being developed 
-at the moment these lines were written, so there is probability that 
-there is another useful tool for you.
+We have [@ama-team/voxengine-definitions][@definitions] package that 
+helps with autocompletion. Also, 
+[scenario framework][@scenario-framework] and 
+[script publishing tool][@publisher] were being developed at the moment
+these lines were written, so there is probability that there is another 
+useful tool for you.
 
 There is no particular roadmap for this project, so you may use github 
 issues to propose any ideas you got. However, there is not much time
 that could be devoted to this project.
+
+  [allure-commandline]: http://wiki.qatools.ru/display/AL/Allure+Commandline
+  [@definitions]: https://github.com/ama-team/voxengine-definitions
+  [@scenario-framework]: https://github.com/ama-team/voxengine-scenario-framework
+  [@publisher]: https://github.com/ama-team/voximplant-publisher
