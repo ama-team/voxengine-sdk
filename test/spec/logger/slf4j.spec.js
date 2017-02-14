@@ -3,13 +3,17 @@ var sinon = require('sinon'),
     chaiString = require('chai-string'),
     assert = chai.assert,
     should = chai.should(),
-    loggers = require('../../lib/loggers');
+    slf4j = require('../../../lib/logger/slf4j'),
+    Slf4j = slf4j.Slf4j,
+    Level = slf4j.Level,
+    expect = chai.expect;
 
 chai.use(chaiString);
 
-describe('/logger.js', function () {
-    describe('.slf4j', function () {
+describe('/logger/slf4j.js', function () {
+    describe('.Slf4j', function () {
         var testMessage = 'Hey there, spectacular',
+            loggerName = 'ama-team.voxengine-sdk.slf4j.Slf4j',
             logs,
             writer,
             logger;
@@ -17,17 +21,16 @@ describe('/logger.js', function () {
         beforeEach(function () {
             logs = [];
             writer = {
-                write: function (message) {
+                write: sinon.spy(function (message) {
                     logs.push(message);
-                }
+                })
             };
-            sinon.spy(writer, 'write');
-            logger = new loggers.slf4j(writer, loggers.LogLevel.ALL);
+            logger = new Slf4j(loggerName, Level.All, writer);
         });
 
         afterEach(function () {
             if ('allure' in global && logs.length) {
-                allure.createAttachment('out.log', logs.join('\n'), 'text/plain');
+                allure.createAttachment('output.log', logs.join('\n'), 'text/plain');
             }
         });
 
@@ -35,6 +38,16 @@ describe('/logger.js', function () {
             logger.error(testMessage);
             assert(writer.write.calledOnce);
             assert(writer.write.calledWithMatch(testMessage));
+        });
+
+        it('should pass logger name in output', function () {
+            logger.error(testMessage);
+            expect(logs[0]).to.be.contain(loggerName)
+        });
+
+        it('should feel ok without logger name', function () {
+            logger = new slf4j.Slf4j(undefined, Level.All, writer);
+            logger.error(testMessage);
         });
 
         it('should pass message with level equal to threshold', function () {
@@ -50,7 +63,7 @@ describe('/logger.js', function () {
         });
 
         it('should swallow message with level lesser than threshold', function () {
-            logger = new loggers.slf4j(writer, loggers.LogLevel.ERROR);
+            logger = new Slf4j(loggerName, Level.Error, writer);
             logger.debug(testMessage);
             assert(writer.write.notCalled);
         });
@@ -96,7 +109,7 @@ describe('/logger.js', function () {
                 stack = 'superFunc() at file:60:64\nanotherFunc() at file:60:64',
                 name = 'TestingException',
                 message = 'An exception has been thrown',
-                expected = ['[DEBUG] Unhandled exception:', name + ': ' + message, 'Stack:', stack].join('\n'),
+                expected = ['[DEBUG] ' + loggerName + ': Unhandled exception:', name + ': ' + message, 'Stack:', stack].join('\n'),
                 pattern = 'Unhandled exception:';
 
             parameter.name = name;

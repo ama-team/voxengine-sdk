@@ -3,8 +3,9 @@ var sinon = require('sinon'),
     should = chai.should(),
     assert = chai.assert,
     chaiPromised = require('chai-as-promised'),
-    clients = require('../../lib/http'),
-    HttpMethod = clients.HttpMethod;
+    rest = require('../../../lib/http/rest'),
+    Rest = rest.Client,
+    Method = rest.Method;
 
 chai.use(chaiPromised);
 
@@ -17,7 +18,7 @@ global.Net = {HttpRequestOptions: function () {
 }};
 
 
-describe('/http-client.js', function () {
+describe('/http/rest.js', function () {
     var transportFactory = function () {
             var stub = sinon.stub(),
                 returnValue;
@@ -31,11 +32,11 @@ describe('/http-client.js', function () {
         /**
          * @param transport
          * @param [settings]
-         * @return {RestClient}
+         * @return {Rest}
          */
         clientFactory = function (transport, settings) {
             settings = settings || {};
-            return new clients.rest(transport, settings);
+            return new Rest(transport, settings);
         };
 
     describe('.rest', function () {
@@ -43,7 +44,7 @@ describe('/http-client.js', function () {
         it('should not use methodOverrideHeader on GET request', function () {
             var transport = transportFactory({code: 200}),
                 client = clientFactory(transport, {methodOverrideHeader: 'X-HTTP-Method-Override'});
-            return client.request(HttpMethod.Get, '/objects/1')
+            return client.request(Method.Get, '/objects/1')
                 .then(function () {
                     transport.getCall(0).args[1].headers.should.not.have.property('X-HTTP-Method-Override');
                 });
@@ -52,22 +53,22 @@ describe('/http-client.js', function () {
         it('should use methodOverrideHeader on PUT request', function () {
             var transport = transportFactory({code: 200}),
                 client = clientFactory(transport, {methodOverrideHeader: 'X-HTTP-Method-Override'});
-            return client.request(HttpMethod.Put, '/objects/1')
+            return client.request(Method.Put, '/objects/1')
                 .then(function () {
-                    transport.getCall(0).args[1].headers.should.contain('X-HTTP-Method-Override: ' + HttpMethod.Put);
+                    transport.getCall(0).args[1].headers.should.contain('X-HTTP-Method-Override: ' + Method.Put);
                 });
         });
 
         it('should fail without methodOverrideHeader on PUT request', function () {
             var transport = transportFactory({code: 200}),
                 client = clientFactory(transport);
-            return client.request(HttpMethod.Put, '/objects/1').should.eventually.be.rejected;
+            return client.request(Method.Put, '/objects/1').should.eventually.be.rejected;
         });
 
         it('should not retry if 1 is specified as max attempts', function () {
             var transport = transportFactory({code: 500}),
                 client = clientFactory(transport, {retryOnServerError: true, attempts: 1});
-            return client.request(HttpMethod.Get, '/').then(function() {
+            return client.request(Method.Get, '/').then(function() {
                 assert.fail('This branch should not have been executed');
             }, function () {
                 assert(transport.calledOnce);
@@ -78,7 +79,7 @@ describe('/http-client.js', function () {
             var response = {code: 500},
                 transport = transportFactory(response, response, response),
                 client = clientFactory(transport, {retryOnServerError: true, attempts: 3});
-            return client.request(HttpMethod.Get, '/').then(function() {
+            return client.request(Method.Get, '/').then(function() {
                 assert.fail('This branch should not have been executed');
             }, function () {
                 assert(transport.calledThrice);
@@ -88,7 +89,7 @@ describe('/http-client.js', function () {
         it('should retry on network fail by default', function () {
             var transport = transportFactory({code: -6}, {code: 200}),
                 client = clientFactory(transport, {attempts: 2});
-            return client.request(HttpMethod.Get, '/').then(function() {
+            return client.request(Method.Get, '/').then(function() {
                 assert(transport.calledTwice);
             });
         });
@@ -96,7 +97,7 @@ describe('/http-client.js', function () {
         it('should not retry on network fail if this feature is turned off', function () {
             var transport = transportFactory({code: -6}, {code: 200}),
                 client = clientFactory(transport, {retryOnNetworkError: false, attempts: 2});
-            return client.request(HttpMethod.Get, '/').then(function() {
+            return client.request(Method.Get, '/').then(function() {
                 assert.fail('This branch should not have been executed');
             }, function () {
                 assert(transport.calledOnce);
@@ -106,13 +107,13 @@ describe('/http-client.js', function () {
         it('should retry on server error by default', function () {
             var transport = transportFactory({code: 500}, {code: 200}),
                 client = clientFactory(transport, {attempts: 2});
-            return client.request(HttpMethod.Get, '/').should.eventually.have.property('code', 200);
+            return client.request(Method.Get, '/').should.eventually.have.property('code', 200);
         });
 
         it('should not retry on server error if this feature is turned off', function () {
             var transport = transportFactory({code: 500}, {code: 200}),
                 client = clientFactory(transport, {retryOnServerError: false, attempts: 2});
-            return client.request(HttpMethod.Get, '/').then(function () {
+            return client.request(Method.Get, '/').then(function () {
                 assert.fail('This branch should not have been executed');
             }, function () {
                 assert(transport.calledOnce);
@@ -122,7 +123,7 @@ describe('/http-client.js', function () {
         it('should not retry on client error by default', function () {
             var transport = transportFactory({code: 400}, {code: 200}),
                 client = clientFactory(transport, {attempts: 2});
-            return client.request(HttpMethod.Get, '/').then(function () {
+            return client.request(Method.Get, '/').then(function () {
                 assert.fail('This branch should not have been executed');
             }, function () {
                 assert(transport.calledOnce);
@@ -132,14 +133,14 @@ describe('/http-client.js', function () {
         it('should retry on client error if this feature is turned on', function () {
             var transport = transportFactory({code: 400}, {code: 200}),
                 client = clientFactory(transport, {retryOnClientError: true, attempts: 2});
-            return client.request(HttpMethod.Get, '/').should.eventually.have.property('code', 200);
+            return client.request(Method.Get, '/').should.eventually.have.property('code', 200);
         });
 
         it('should serialize and deserialize data', function () {
             var data = {x: 12},
                 transport = transportFactory({code: 200, body: JSON.stringify(data)}),
                 client = clientFactory(transport);
-            return client.request(HttpMethod.Get, '/', data).then(function (response) {
+            return client.request(Method.Get, '/', data).then(function (response) {
                 JSON.stringify(data).should.be.deep.equal(transport.getCall(0).args[1].postData);
                 return response.payload;
             }).should.eventually.be.deep.equal(data);
@@ -148,7 +149,7 @@ describe('/http-client.js', function () {
         it('should correctly process headers injected as strings', function () {
             var transport = transportFactory({code: 200}),
                 client = clientFactory(transport);
-            return client.request(HttpMethod.Get, '/', {}, {}, {'Content-Type': 'application/json'})
+            return client.request(Method.Get, '/', {}, {}, {'Content-Type': 'application/json'})
                 .then(function () {
                     transport.getCall(0).args[1].headers.should.be.deep.equal(['Content-Type: application/json']);
                 });
@@ -157,8 +158,9 @@ describe('/http-client.js', function () {
         it('should correctly assemble query ', function () {
             var transport = transportFactory({code: 200}),
                 client = clientFactory(transport),
+                query = {query: 'фантастика', filter: ['cheap', 'colorful', '1=1']},
                 expected = '/?query=%D1%84%D0%B0%D0%BD%D1%82%D0%B0%D1%81%D1%82%D0%B8%D0%BA%D0%B0&filter=cheap&filter=colorful&filter=1%3D1';
-            return client.request(HttpMethod.Get, '/', {}, {query: 'фантастика', filter: ['cheap', 'colorful', '1=1']})
+            return client.request(Method.Get, '/', {}, query)
                 .then(function () {
                     transport.getCall(0).args[0].should.be.equal(expected);
                 });
