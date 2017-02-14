@@ -123,6 +123,21 @@ There is no particular roadmap for this project, so you may use GitHub
 issues to propose any ideas you got. However, there is not much time
 that could be devoted to this project.
 
+## Self-esteem badge fund
+
+[![npm (scoped)](https://img.shields.io/npm/v/@ama-team/voxengine-sdk.svg)](https://www.npmjs.com/package/@ama-team/voxengine-sdk)
+
+### Master branch / stable
+ 
+[![Build Status](https://travis-ci.org/ama-team/voxengine-sdk.svg?branch=master)](https://travis-ci.org/ama-team/voxengine-sdk)
+[![Coverage Status](https://coveralls.io/repos/github/ama-team/voxengine-sdk/badge.svg?branch=master)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=master)
+[![Code Climate](https://codeclimate.com/github/ama-team/voxengine-sdk/badges/gpa.svg)](https://codeclimate.com/github/ama-team/voxengine-sdk)
+
+### Dev branch / incubating
+
+[![Build Status](https://travis-ci.org/ama-team/voxengine-sdk.svg?branch=dev)](https://travis-ci.org/ama-team/voxengine-sdk)
+[![Coverage Status](https://coveralls.io/repos/github/ama-team/voxengine-sdk/badge.svg?branch=dev)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=dev)
+
   [allure-commandline]: http://wiki.qatools.ru/display/AL/Allure+Commandline
   [@definitions]: https://github.com/ama-team/voxengine-definitions
   [@scenario-framework]: https://github.com/ama-team/voxengine-scenario-framework
