@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+  - "0.12"
+before_script: npm i
+script:
+  - npm test
+  - npm run test:coverage
+env:
+  global:
+    secure: nM4VCsngmj/bCQq8eIlDRLVg7wb6ndKmjMX2WAytzuewvd7F9+0+mho9m+NQw7o604Xx5IKQGfW4eoR2NWoBhQiv3WbNnDgC/GKRDv6xERLm0wJSzwQGwa2ZPfCweuJwbH/Fjf+HOYRo8mNfRGqT15LIVb3gBS3osmMgvreQLcQe8TKTyQLfmdwREvhtCZWS29mYFivdJnvTVfmdo1oEEsGw9hNOQBM5S23Y0I8/yYkAjvtEiTw2qlAVrXdEjMGQagprB2AGW4zH4EXd5bTnC6n/RQ2XFmTI+BOBQ+PkDXxNi/ENvmkJE1ra3gmluAc6HtHHfK3eCSmeuKq95vYQr1iXpHD3o30HOwlqsegJjUfX0nHpciDpxEheMYf4jbnjHI90PIQvhka7BXjk30atOIch1WJFBkx8DSxumeVHw1DbL3nP533ixeWhMnAwZBSznJNrLbXFwpPBlhvGy7A950b7HVYwgn9riYICi20ZFjXWU3aew7e4+DeasdB9tz54h8xOmDFEg3PQf9cwPtayLVjzOaB1YsPYrizQMwFxNPBrlOCNHDNvYnarnSMQQzAKJ3SohiiSPGrm+PT0LvvJd9+gRofcUcCEAju+9H6Ge+Y0LYd2FzH0onGMgswGd1SsPur/efwydDMloDsrY3QolxAkrCyocSJmTUvpwe3g4LM=
