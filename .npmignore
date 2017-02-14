@@ -1,10 +1,13 @@
 # Package burden
-/node_modules
+node_modules
 npm-debug.log
 test
+.gitignore
 
-# Build files
+# Build-related files
 report
+.travis.yml
+.istanbul.yml
 
 # IDE Files
 .idea
