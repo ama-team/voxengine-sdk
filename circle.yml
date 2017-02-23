@@ -12,11 +12,11 @@ test:
     - 'npm run test:report'
     - 'npm run test:report:publish'
     - mkdir -p $CIRCLE_TEST_REPORTS/junit
-    - cp build/data/xunit.xml $CIRCLE_TEST_REPORTS/junit/xunit.xml
+    - cp build/data/xunit/xunit.xml $CIRCLE_TEST_REPORTS/junit/xunit.xml
 deployment:
   npm-release:
     tag: /^\d+\.\d+\.\d+$/
-    owner: ama-bot
+    owner: ama-team
     commands:
       - echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ~/.npmrc
       - npm publish --access public
