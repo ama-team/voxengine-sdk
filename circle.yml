@@ -1,0 +1,22 @@
+machine:
+  post:
+    - sudo apt-add-repository ppa:yandex-qatools/allure-framework -y
+    - sudo apt-get update -yq
+    - sudo apt-get install allure-commandline -yq
+general:
+  artifacts:
+    - build/report
+    - build/data
+test:
+  post:
+    - 'npm run test:report'
+    - 'npm run test:report:publish'
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit
+    - cp build/data/xunit.xml $CIRCLE_TEST_REPORTS/junit/xunit.xml
+deployment:
+  npm-release:
+    tag: /^\d+\.\d+\.\d+$/
+    owner: ama-bot
+    commands:
+      - echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ~/.npmrc
+      - npm publish --access public
