@@ -5,8 +5,8 @@ test
 .gitignore
 
 # Build-related files
-report
-.travis.yml
+build
+circle.yml
 .istanbul.yml
 
 # IDE Files
