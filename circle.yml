@@ -10,6 +10,9 @@ general:
 test:
   post:
     - 'npm run test:report'
+    # in case tag is pushed, coveralls will try to find current branch and will end on master
+    # this should be reworked some day, since it is not necessary that tag will end on master branch
+    - git fetch origin master && git branch master --track origin/master
     - 'npm run test:report:publish'
     - mkdir -p $CIRCLE_TEST_REPORTS/junit
     - cp build/data/xunit/xunit.xml $CIRCLE_TEST_REPORTS/junit/xunit.xml
