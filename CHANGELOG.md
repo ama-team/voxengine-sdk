@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Decoupled basic HTTP client from REST HTTP client
+- Refactored HTTP exceptions
+- Dropped deprecated functionality
+
 ## [0.1.3] - 2017-02-24
 ### Changed
 - Technical release, only Circle CI configuration is touched
