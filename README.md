@@ -4,7 +4,7 @@ This repository contains simple SDK to ease development of VoxImplant
 scenarios.
 
 Currently it consists of an advanced promise-based HTTP client (relatively to 
-raw `Net` namespace) and slf4j-alike logger.
+raw `Net` namespace) and SLF4J-alike logger.
 
 It may be installed via classic npm call
 
@@ -25,18 +25,45 @@ This library wraps standard `Logger` and adds support for log levels
 parameters (substitutions):
 
 ```js
-var logger = new sdk.logger.Slf4j('logger-name');
+var logger = new sdk.logger.slf4j.Slf4j('logger-name');
 
 // ...
 
-call.addEventListener(CallEvents.Connected, function(event) {
-    logger.info('{} has responded in {} seconds (event: {})', user, timer.elapsed(), event);
+var user = 'Pavel',
+    elapsed = 12.345,
+    event = {name: 'CallEvents.Connected'};
+    
+call.addEventListener(CallEvents.Connected, function (event) {
+    logger.info('{} has responded in {} seconds (event: {})', user, elapsed, event);
+    // [INFO] logger-name: Pavel has responded in 12.345 seconds (event: {"name": "CallEvents.Connected"})
 });
 ```
 
 This logger provides `.trace()`, `.debug()`, `.notice()`, `.info()`, 
 `.warn()`, `.error()` and `.log(logger.Level.*, pattern, substitutions...)` 
-methods.
+methods to print things, and `.setThreshold` method to configure output
+filtering.
+
+Full logger constructor signature looks like this:
+
+```js
+new Slf4j(name, level, writer);
+```
+
+where name will be printed before real content (to distinguish 
+different loggers), level is `sdk.logger.Level` enum instance, and 
+writer is anything that has `.write` method accepting string.
+
+There is also factory to simplify new logger creation:
+
+```js
+var factory = new sdk.logger.slf4j.Factory(sdk.logger.Level.Info, Logger),
+    httpLogger = factory.create('scenario.http'),
+    logicLogger = factory.create('scenario.logic')
+```
+
+This will probably be useful for other VoxImplant-related packages 
+rather than scenarios, though.
 
 ## REST client
 
@@ -92,7 +119,7 @@ and, of course good old Grunt and Gulp should work too.
 
 Don't forget that VoxImplant has scenario size limit of 128 kb, so 
 don't require anything at sight, don't forget to minify things
-you require adn don't forget to strip comments off.
+you require and don't forget to strip comments off.
 
 ## ES5
 
@@ -108,7 +135,7 @@ recording coverage metrics and Allure framework for reporting. If you
 want full-blown feedback, use `npm run test:report` to generate Allure 
 report (don't forget to install 
 [allure-commandline][allure-commandline] before), it will be placed in 
-`report/allure` directory.
+`build/report/allure` directory.
 
 ## Anything else?
 
@@ -125,18 +152,18 @@ that could be devoted to this project.
 
 ## Self-esteem badge fund
 
-[![npm (scoped)](https://img.shields.io/npm/v/@ama-team/voxengine-sdk.svg)](https://www.npmjs.com/package/@ama-team/voxengine-sdk)
+[![npm version](https://img.shields.io/npm/v/@ama-team/voxengine-sdk.svg?style=flat-square)](https://www.npmjs.com/package/@ama-team/voxengine-sdk)
 
 ### Master branch / stable
  
-[![Build Status](https://travis-ci.org/ama-team/voxengine-sdk.svg?branch=master)](https://travis-ci.org/ama-team/voxengine-sdk)
-[![Coverage Status](https://coveralls.io/repos/github/ama-team/voxengine-sdk/badge.svg?branch=master)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=master)
-[![Code Climate](https://codeclimate.com/github/ama-team/voxengine-sdk/badges/gpa.svg)](https://codeclimate.com/github/ama-team/voxengine-sdk)
+[![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
+[![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=master)
+[![Code Climate](https://img.shields.io/codeclimate/github/ama-team/voxengine-sdk.svg?style=flat-square)](https://codeclimate.com/github/ama-team/voxengine-sdk)
 
 ### Dev branch / incubating
 
-[![Build Status](https://travis-ci.org/ama-team/voxengine-sdk.svg?branch=dev)](https://travis-ci.org/ama-team/voxengine-sdk)
-[![Coverage Status](https://coveralls.io/repos/github/ama-team/voxengine-sdk/badge.svg?branch=dev)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=dev)
+[![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
+[![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=dev)
 
   [allure-commandline]: http://wiki.qatools.ru/display/AL/Allure+Commandline
   [@definitions]: https://github.com/ama-team/voxengine-definitions

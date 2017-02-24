@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-- SLF4J-alike Logger .setThreshold() method and Factory class
-- Deprecated `Level`, `toLevel`, `toThreshold` and `Threshold` in
+- SLF4J-alike Logger `.setThreshold()` method and `Factory` class
+- Deprecated `toLevel`, `toThreshold` and `Threshold` in
 `logger.slf4j`, `Method` in `http.rest`
 - Added `logger.Level` and `http.Method` to replace deprecated symbols
 
