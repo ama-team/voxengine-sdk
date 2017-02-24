@@ -1,6 +1,6 @@
 {
   "name": "@ama-team/voxengine-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bundle of helpers for VoxEngine scenario scripts",
   "main": "index.js",
   "scripts": {
@@ -19,19 +19,23 @@
     "url": "https://github.com/ama-team/voxengine-sdk.git"
   },
   "keywords": [
-    "voximplant"
+    "voximplant",
+    "voxengine"
   ],
-  "author": "AMA Team",
+  "author": {
+    "name": "AMA Team",
+    "email": "dev@amagroup.ru",
+    "url": "http://amagroup.ru"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ama-team/voxengine-sdk/issues"
   },
   "homepage": "https://github.com/ama-team/voxengine-sdk#readme",
-  "dependencies": {
-    "@ama-team/voxengine-definitions": "^0.1.0",
-    "promise": "^7.1.1"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@ama-team/voxengine-definitions": "^0.1.0",
+    "promise": "^7.1.1",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "chai-string": "^1.3.0",

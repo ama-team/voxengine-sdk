@@ -2,10 +2,10 @@ var sinon = require('sinon'),
     chai = require('chai'),
     chaiString = require('chai-string'),
     assert = chai.assert,
-    should = chai.should(),
-    slf4j = require('../../../lib/logger/slf4j'),
-    Slf4j = slf4j.Slf4j,
-    Level = slf4j.Level,
+    should = chai.should,
+    Loggers = require('../../../lib/logger'),
+    Slf4j = Loggers.slf4j.Slf4j,
+    Level = Loggers.Level,
     expect = chai.expect;
 
 chai.use(chaiString);
@@ -46,7 +46,7 @@ describe('/logger/slf4j.js', function () {
         });
 
         it('should feel ok without logger name', function () {
-            logger = new slf4j.Slf4j(undefined, Level.All, writer);
+            logger = new Slf4j(undefined, Level.All, writer);
             logger.error(testMessage);
         });
 

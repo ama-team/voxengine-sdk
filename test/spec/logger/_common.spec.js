@@ -4,13 +4,13 @@ var sinon = require('sinon'),
     should = chai.should(),
     expect = chai.expect,
     blackhole = chai.use(require('chai-string')),
-    index = require('../../../lib/logger'),
-    Level = index.Level,
-    toLevel = index.toLevel,
-    Threshold = index.Threshold,
-    toThreshold = index.toThreshold;
+    Commons = require('../../../lib/logger/_common'),
+    Level = Commons.Level,
+    toLevel = Commons.toLevel,
+    Threshold = Commons.Threshold,
+    toThreshold = Commons.toThreshold;
 
-describe('/logger/index.js', function () {
+describe('/logger/_common.js', function () {
     describe('.toLevel', function () {
         it('should correctly process exact naming', function () {
             expect(toLevel('INFO')).to.eq(Level.Info);
