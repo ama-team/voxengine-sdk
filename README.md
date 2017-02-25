@@ -65,6 +65,72 @@ var factory = new sdk.logger.slf4j.Factory(sdk.logger.Level.Info, Logger),
 This will probably be useful for other VoxImplant-related packages 
 rather than scenarios, though.
 
+## Basic HTTP Client
+
+This client is a simple wrapper around `Net.httpRequestAsync` primitive
+
+```js
+var sdk = require('@ama-team/voxengine-sdk'),
+    client = new sdk.http.basic.Client(Net.httpRequestAsync, {retries: 9, throwOnServerError: true});
+
+var call = client
+    .get('http://my.backend.com/magic-phone-number.txt')
+    .then(function(response) {
+        return VoxEngine.callPSTN(response.payload);
+    });
+```
+
+Basic client provides you with following methods:
+
+- `get(url, [query, headers])`
+- `head(url, [query, headers])`
+- `post(url, [payload, headers])`
+- `put(url, [payload, headers])`
+- `patch(url, [payload, headers])`
+- `delete(url, [payload, headers])`
+- `request(method, url, query, payload, headers)`
+
+with following rules:
+
+- Query is an object where every key is associated with a
+string value or array of string values
+- The same applies to headers object
+- Payload may be a string only
+- There are no smart actions applied on url, so it will be passed 
+through as-is (don't forget to specify host)
+- Method is a string (surprise!) and can be set using `sdk.http.Method` 
+enum
+
+Every method returns a promise that resolves with either full response,
+`sdk.http.NetworkException`, `sdk.http.HttpException` or of their 
+children. Whether an error will be thrown and how many retries will be 
+made is defined in client settings passed as the second constructor 
+argument:
+
+```js
+var settings = {
+    retryOnNetworkError: true,
+    throwOnServerError: false,
+    retryOnServerError: true,
+    throwOnClientError: false,
+    retryOnClientError: false,
+    // NotFound is a special case for 404 response code
+    throwOnNotFound: false,
+    retryOnNotFound: false,
+    // those will be used on every request unless headers 
+    // specified with request override these 
+    headers: {},
+    // maximum amount of request retries
+    retries: 4,
+    // alternative logger
+    logger: new sdk.logger.slf4j.Slf4j('scenario.http.client-a')
+};
+```
+
+Tou can tune client as you want to throw exceptions or return responses
+on certain outcomes. Network errors always result in exception, 
+however, you may enforce several retries to be made.
+
 ## REST client
 
 Provided client exploits `Net` inhabitant capabilities to provide more 
