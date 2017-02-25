@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf build",
-    "test": "node_modules/.bin/istanbul cover _mocha",
+    "test": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha",
     "test:report:allure": "allure generate -o build/report/allure -- build/data/allure",
     "test:report:allure:open": "allure report open -o build/report/allure",
     "test:report": "npm run test:report:allure",
@@ -33,6 +33,7 @@
   "homepage": "https://github.com/ama-team/voxengine-sdk#readme",
   "dependencies": {},
   "devDependencies": {
+    "@ama-team/allure-polyfill": "^0.1.0",
     "@ama-team/voxengine-definitions": "^0.1.0",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
