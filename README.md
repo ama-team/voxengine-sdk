@@ -101,11 +101,11 @@ through as-is (don't forget to specify host)
 - Method is a string (surprise!) and can be set using `sdk.http.Method` 
 enum
 
-Every method returns a promise that resolves with either full response,
-`sdk.http.NetworkException`, `sdk.http.HttpException` or of their 
-children. Whether an error will be thrown and how many retries will be 
-made is defined in client settings passed as the second constructor 
-argument:
+Every method returns a promise that either resolves with response or
+rejects with `sdk.http.NetworkException`, `sdk.http.HttpException`, one 
+of their children or `sdk.http.InvalidConfigurationException`. Whether 
+an error will be thrown and how many retries will be made is defined in 
+client settings passed as the second constructor argument:
 
 ```js
 var settings = {
@@ -117,6 +117,10 @@ var settings = {
     // NotFound is a special case for 404 response code
     throwOnNotFound: false,
     retryOnNotFound: false,
+    // VoxImplant is capable only of emitting GET and POST requests,
+    // but this may be overcome by providing real method in
+    // additional header
+    methodOverrideHeader: 'X-HTTP-Method-Override',
     // those will be used on every request unless headers 
     // specified with request override these 
     headers: {},

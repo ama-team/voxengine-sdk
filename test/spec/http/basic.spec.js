@@ -30,7 +30,7 @@ describe('/http', function () {
             };
 
         it('should correctly execute request', function () {
-            return new Client(transportFactory({code: 200, headers: {}, text: '{}'}))
+            return new Client(transportFactory({code: 200, headers: {}, text: '{}'}), {})
                 .request(Method.Get, '/test')
                 .then(function (response) {
                     expect(response.code).to.eq(200);
@@ -40,7 +40,7 @@ describe('/http', function () {
         });
 
         it('should correctly merge and overwrite headers', function () {
-            var options = {headers: {overwritten: ['a', 'b'], kept: ['c', 'd']}},
+            var options = {headers: {overwritten: ['a', 'b'], kept: ['c', 'd']}, methodOverrideHeader: 'X-HMO'},
                 overrides = {introduced: ['e', 'f'], overwritten: ['g']},
                 expected = [
                     'introduced: e',
@@ -60,11 +60,11 @@ describe('/http', function () {
         ['get', 'head'].forEach(function (method) {
             it('should provide ' + method + ' request method', function () {
                 var transport = transportFactory({code: 200, headers: {}, text: '{}'}),
-                    client = new Client(transport);
+                    client = new Client(transport, {methodOverrideHeader: 'X-HMO'});
                 return client[method].call(client, '/test', {alpha: 'beta'}, {'X-Gamma': 'delta'})
                     .then(function () {
                         var call = transport.getCall(0);
-                        expect(call.args[1].headers).to.deep.eq(['X-Gamma: delta']);
+                        expect(call.args[1].headers).to.contain('X-Gamma: delta');
                         expect(call.args[1].postData).to.be.not.ok;
                         expect(call.args[0]).to.eq('/test?alpha=beta');
                     });
@@ -74,12 +74,12 @@ describe('/http', function () {
         ['post', 'put', 'patch', 'delete'].forEach(function (method) {
             it('should provide ' + method + ' request method', function () {
                 var transport = transportFactory({code: 200, headers: {}, text: '{}'}),
-                    client = new Client(transport),
+                    client = new Client(transport, {methodOverrideHeader: 'X-HMO'}),
                     payload = '{"alpha": "beta"}';
                 return client[method].call(client, '/test', payload, {'X-Gamma': 'delta'})
                     .then(function () {
                         var call = transport.getCall(0);
-                        expect(call.args[1].headers).to.deep.eq(['X-Gamma: delta']);
+                        expect(call.args[1].headers).to.contain('X-Gamma: delta');
                         expect(call.args[1].postData).to.eq(payload);
                         expect(call.args[0]).to.eq('/test');
                     });
@@ -184,6 +184,25 @@ describe('/http', function () {
                 expect(error).to.be.instanceOf(Clients.NetworkException);
                 expect(error.code).to.eq(-1);
             });
-        })
+        });
+
+        it('should not let execute non-get/post request without method override header', function () {
+            var transport = transportFactory({}),
+                client = new Client(transport);
+
+            return client.put('/test').then(branchStopper, function (error) {
+                expect(error).to.be.instanceOf(Clients.InvalidConfigurationException);
+                expect(transport.callCount).to.eq(0);
+            });
+        });
+
+        it('should add method override header for non-get/post request', function () {
+            var transport = transportFactory({code: 200}),
+                client = new Client(transport, {methodOverrideHeader: 'X-HMO'});
+
+            return client.put('/test').then(function () {
+                expect(transport.getCall(0).args[1].headers).to.deep.eq(['X-HMO: PUT']);
+            });
+        });
     });
 });
