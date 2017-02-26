@@ -3,167 +3,185 @@ var sinon = require('sinon'),
     should = chai.should(),
     assert = chai.assert,
     chaiPromised = require('chai-as-promised'),
+    Clients = require('../../../lib/http'),
     rest = require('../../../lib/http/rest'),
-    Rest = rest.Client,
-    Method = rest.Method;
+    Rest = rest.Client;
 
 chai.use(chaiPromised);
 
-// todo: not good
-//noinspection JSUnusedGlobalSymbols
-global.Net = {HttpRequestOptions: function () {
-    this.headers = {};
-    this.postData = null;
-    this.method = null;
-}};
+// todo: save log output in allure
 
-
-describe('/http/rest.js', function () {
-    var transportFactory = function () {
-            var stub = sinon.stub(),
-                returnValue;
-            for (var i = 0; i < arguments.length; i++) {
-                returnValue = arguments[i];
-                returnValue.headers = returnValue.headers || {};
-                stub.onCall(i).returns(Promise.resolve(returnValue));
-            }
-            return stub;
-        },
-        /**
-         * @param transport
-         * @param [settings]
-         * @return {Rest}
-         */
-        clientFactory = function (transport, settings) {
-            settings = settings || {};
-            return new Rest(transport, settings);
-        };
-
-    describe('.rest', function () {
-
-        it('should not use methodOverrideHeader on GET request', function () {
-            var transport = transportFactory({code: 200}),
-                client = clientFactory(transport, {methodOverrideHeader: 'X-HTTP-Method-Override'});
-            return client.request(Method.Get, '/objects/1')
-                .then(function () {
-                    transport.getCall(0).args[1].headers.should.not.have.property('X-HTTP-Method-Override');
+describe('/http', function () {
+    describe('/rest.js', function () {
+        var transportFactory = function () {
+                var responses = Array.prototype.slice.call(arguments, 0),
+                    index = 0;
+                return sinon.spy(function () {
+                    return Promise.resolve(responses[index++ % responses.length]);
                 });
-        });
+            },
+            clientFactory = function (transport, opts) {
+                opts = opts || {methodOverrideHeader: 'X-MOH'};
+                opts.serializer = opts.serializer || {
+                        serialize: function (_) {
+                            return _;
+                        },
+                        deserialize: function (_) {
+                            return _;
+                        }
+                    };
+                return new Rest(transport, opts);
+            };
 
-        it('should use methodOverrideHeader on PUT request', function () {
-            var transport = transportFactory({code: 200}),
-                client = clientFactory(transport, {methodOverrideHeader: 'X-HTTP-Method-Override'});
-            return client.request(Method.Put, '/objects/1')
-                .then(function () {
-                    transport.getCall(0).args[1].headers.should.contain('X-HTTP-Method-Override: ' + Method.Put);
+        describe('.Client', function () {
+            describe('.exists', function () {
+                it('should return true for code 200 response', function () {
+                    var transport = transportFactory({code: 200}),
+                        client = clientFactory(transport);
+
+                    return client.exists('/entity').should.eventually.eq(true);
                 });
-        });
 
-        it('should fail without methodOverrideHeader on PUT request', function () {
-            var transport = transportFactory({code: 200}),
-                client = clientFactory(transport);
-            return client.request(Method.Put, '/objects/1').should.eventually.be.rejected;
-        });
+                it('should return true for code 201 response', function () {
+                    var transport = transportFactory({code: 201}),
+                        client = clientFactory(transport);
 
-        it('should not retry if 1 is specified as max attempts', function () {
-            var transport = transportFactory({code: 500}),
-                client = clientFactory(transport, {retryOnServerError: true, attempts: 1});
-            return client.request(Method.Get, '/').then(function() {
-                assert.fail('This branch should not have been executed');
-            }, function () {
-                assert(transport.calledOnce);
-            });
-        });
-
-        it('should retry twice if 3 is specified as max attempts', function () {
-            var response = {code: 500},
-                transport = transportFactory(response, response, response),
-                client = clientFactory(transport, {retryOnServerError: true, attempts: 3});
-            return client.request(Method.Get, '/').then(function() {
-                assert.fail('This branch should not have been executed');
-            }, function () {
-                assert(transport.calledThrice);
-            });
-        });
-
-        it('should retry on network fail by default', function () {
-            var transport = transportFactory({code: -6}, {code: 200}),
-                client = clientFactory(transport, {attempts: 2});
-            return client.request(Method.Get, '/').then(function() {
-                assert(transport.calledTwice);
-            });
-        });
-
-        it('should not retry on network fail if this feature is turned off', function () {
-            var transport = transportFactory({code: -6}, {code: 200}),
-                client = clientFactory(transport, {retryOnNetworkError: false, attempts: 2});
-            return client.request(Method.Get, '/').then(function() {
-                assert.fail('This branch should not have been executed');
-            }, function () {
-                assert(transport.calledOnce);
-            });
-        });
-
-        it('should retry on server error by default', function () {
-            var transport = transportFactory({code: 500}, {code: 200}),
-                client = clientFactory(transport, {attempts: 2});
-            return client.request(Method.Get, '/').should.eventually.have.property('code', 200);
-        });
-
-        it('should not retry on server error if this feature is turned off', function () {
-            var transport = transportFactory({code: 500}, {code: 200}),
-                client = clientFactory(transport, {retryOnServerError: false, attempts: 2});
-            return client.request(Method.Get, '/').then(function () {
-                assert.fail('This branch should not have been executed');
-            }, function () {
-                assert(transport.calledOnce);
-            });
-        });
-
-        it('should not retry on client error by default', function () {
-            var transport = transportFactory({code: 400}, {code: 200}),
-                client = clientFactory(transport, {attempts: 2});
-            return client.request(Method.Get, '/').then(function () {
-                assert.fail('This branch should not have been executed');
-            }, function () {
-                assert(transport.calledOnce);
-            });
-        });
-
-        it('should retry on client error if this feature is turned on', function () {
-            var transport = transportFactory({code: 400}, {code: 200}),
-                client = clientFactory(transport, {retryOnClientError: true, attempts: 2});
-            return client.request(Method.Get, '/').should.eventually.have.property('code', 200);
-        });
-
-        it('should serialize and deserialize data', function () {
-            var data = {x: 12},
-                transport = transportFactory({code: 200, body: JSON.stringify(data)}),
-                client = clientFactory(transport);
-            return client.request(Method.Get, '/', data).then(function (response) {
-                JSON.stringify(data).should.be.deep.equal(transport.getCall(0).args[1].postData);
-                return response.payload;
-            }).should.eventually.be.deep.equal(data);
-        });
-
-        it('should correctly process headers injected as strings', function () {
-            var transport = transportFactory({code: 200}),
-                client = clientFactory(transport);
-            return client.request(Method.Get, '/', {}, {}, {'Content-Type': 'application/json'})
-                .then(function () {
-                    transport.getCall(0).args[1].headers.should.be.deep.equal(['Content-Type: application/json']);
+                    return client.exists('/entity').should.eventually.eq(true);
                 });
-        });
 
-        it('should correctly assemble query ', function () {
-            var transport = transportFactory({code: 200}),
-                client = clientFactory(transport),
-                query = {query: 'фантастика', filter: ['cheap', 'colorful', '1=1']},
-                expected = '/?query=%D1%84%D0%B0%D0%BD%D1%82%D0%B0%D1%81%D1%82%D0%B8%D0%BA%D0%B0&filter=cheap&filter=colorful&filter=1%3D1';
-            return client.request(Method.Get, '/', {}, query)
-                .then(function () {
-                    transport.getCall(0).args[0].should.be.equal(expected);
+                it('should return false for code 404 response', function () {
+                    var transport = transportFactory({code: 404}),
+                        client = clientFactory(transport);
+
+                    return client.exists('/entity').should.eventually.eq(false);
                 });
+            });
+
+            describe('.get', function () {
+                it('should return deserialized payload for code 200 response', function () {
+                    var payload = 'Some text',
+                        transport = transportFactory({code: 200, text: payload}),
+                        client = clientFactory(transport);
+
+                    return client.get('/entity').should.eventually.eq(payload);
+                });
+
+                it('should return deserialized payload for code 201 on .get() call', function () {
+                    var payload = 'Some text',
+                        transport = transportFactory({code: 200, text: payload}),
+                        client = clientFactory(transport);
+
+                    return client.get('/entity').should.eventually.eq(payload);
+                });
+
+                it('should return null for code 404 on .get() call', function () {
+                    var payload = 'Some text',
+                        transport = transportFactory({code: 404, text: payload}),
+                        client = clientFactory(transport);
+
+                    return client.get('/entity').should.eventually.eq(null);
+                });
+            });
+
+            var unsafe = ['create', 'set', 'modify', 'delete'];
+
+            unsafe.forEach(function (method) {
+                describe('.' + method, function () {
+                    it('should throw NotFoundException on 404 response', function () {
+                        var client = clientFactory(transportFactory({code: 404})),
+                            eClass = Clients.NotFoundException;
+
+                        return client[method].call(client, '/entity').should.eventually.be.rejectedWith(eClass);
+                    });
+                    
+                    it('should return passed data on 200 response', function () {
+                        var payload = 'Some text',
+                            client = clientFactory(transportFactory({code: 200, text: payload}));
+
+                        return client[method].call(client, '/entity').should.eventually.eq(payload);
+                    });
+
+                    it('should return passed data on 201 response', function () {
+                        var payload = 'Some text',
+                            client = clientFactory(transportFactory({code: 201, text: payload}));
+
+                        return client[method].call(client, '/entity').should.eventually.eq(payload);
+                    });
+
+                    it('should call serializer on provided payload', function () {
+                        var serializer = sinon.spy(function (data) {
+                                return data;
+                            }),
+                            settings = {
+                                methodOverrideHeader: 'X-MOH',
+                                serializer: {
+                                    serialize: serializer,
+                                    deserialize: function (data) {
+                                        return data;
+                                    }
+                                }
+                            },
+                            client = new Rest(transportFactory({code: 200}), settings),
+                            payload = 'Some text';
+
+                        return client[method].call(client, '/entity', payload).then(function () {
+                            serializer.callCount.should.eq(1);
+                            serializer.getCall(0).args[0].should.eq(payload);
+                        });
+                    });
+                });
+            });
+
+            it('should work correctly without any settings provided', function () {
+                var data = 'Some text',
+                    payload = JSON.stringify(data),
+                    client = new Rest(transportFactory({code: 200, text: payload}));
+
+                return client.get('/entity').should.eventually.eq(data);
+            });
+
+            it('should correctly process empty response headers', function () {
+                // yay, 100% coverage
+                var executor = sinon.spy(function () {
+                        return Promise.resolve({code: 200, text: ''});
+                    }),
+                    basic = {execute: executor},
+                    client = new Rest(null, {client: basic});
+
+                return client.request(Clients.Method.Get, '/entity').then(function () {
+                    executor.callCount.should.eq(1);
+                });
+            });
+
+            it('should pass through query, headers and payload', function () {
+                var executor = sinon.spy(function () {
+                        return Promise.resolve({code: 200, text: ''});
+                    }),
+                    basic = {execute: executor},
+                    serializer = {
+                        serialize: function (data) {
+                            return data;
+                        },
+                        deserialize: function (data) {
+                            return data;
+                        }
+                    },
+                    client = new Rest(null, {client: basic, serializer: serializer}),
+                    payload = 'Some text',
+                    query = {alpha: [1, 2]},
+                    headers = {alpha: [1, 2]};
+
+                return client
+                    .request(Clients.Method.Post, '/entity', payload, query, headers)
+                    .then(function () {
+                        executor.callCount.should.eq(1);
+                        var request = executor.getCall(0).args[0];
+                        assert(request);
+                        request.query.should.deep.eq(query);
+                        request.headers.should.deep.eq(headers);
+                        request.payload.should.deep.eq(payload);
+                    });
+            });
         });
     });
 });

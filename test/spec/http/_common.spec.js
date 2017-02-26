@@ -35,12 +35,12 @@ describe('/http', function () {
            }
        });
 
-       it('should pass through provided code', function () {
+       it('should pass provided code to exception', function () {
            expect(new Commons.NetworkException(null, -120).code).to.eq(-120);
            expect(new Commons.TimeoutException(null, -120).code).to.eq(-120);
        });
 
-       it('should save provided message', function () {
+       it('should save provided exception message', function () {
            expect(new Commons.NetworkException('dummy').message).to.eq('dummy');
            expect(new Commons.TimeoutException('dummy').message).to.eq('dummy');
        });
