@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2017-02-26
+### Added
+- Basic HTTP client
+- Completely different REST client
 ### Changed
-- Decoupled basic HTTP client from REST HTTP client
+- Removed old REST client
 - Refactored HTTP exceptions
 - Dropped deprecated functionality
 
