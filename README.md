@@ -3,8 +3,9 @@
 This repository contains simple SDK to ease development of VoxImplant 
 scenarios.
 
-Currently it consists of an advanced promise-based HTTP client (relatively to 
-raw `Net` namespace) and SLF4J-alike logger.
+Currently it consists of promise-based HTTP client (a little bit more 
+advanced than raw `Net.httpRequestAsync`), REST client, which is a 
+simple sugar wrapper for HTTP client, and SLF4J-alike logger.
 
 It may be installed via classic npm call
 
@@ -47,12 +48,12 @@ filtering.
 Full logger constructor signature looks like this:
 
 ```js
-new Slf4j(name, level, writer);
+new Slf4j(name, threshold, writer);
 ```
 
 where name will be printed before real content (to distinguish 
-different loggers), level is `sdk.logger.Level` enum instance, and 
-writer is anything that has `.write` method accepting string.
+different loggers), threshold is `sdk.logger.Level` enum instance, and 
+writer is anything that has `.write` method accepting a string.
 
 There is also factory to simplify new logger creation:
 
@@ -65,48 +66,134 @@ var factory = new sdk.logger.slf4j.Factory(sdk.logger.Level.Info, Logger),
 This will probably be useful for other VoxImplant-related packages 
 rather than scenarios, though.
 
-## REST client
+## Basic HTTP Client
 
-Provided client exploits `Net` inhabitant capabilities to provide more 
-fresh interface:
+This client is a simple wrapper around `Net.httpRequestAsync` primitive
 
 ```js
-var options = {
-        baseUrl: 'http://backend/api/v1',
-        // following stuff is purely optional
-        attempts: 5,
-        methodOverrideHeader: 'X-HTTP-Method-Override',
-        logger: logger,
-        serializer: {
-            serialize: function (object) {
-                return JSON.stringify(object);
-            },
-            deserialize: function (string) {
-                return JSON.parse(string);               
-            }
-        },
-        fixedHeaders: {
-            'Content-Type': 'application/json'
-        }
+var sdk = require('@ama-team/voxengine-sdk'),
+    options = {
+        url: 'http://my.backend.com',
+        retries: 9,
+        throwOnServerError: true
     },
-    client = new sdk.http.rest.RestClient(Net.asyncHttpRequest, options);
+    client = new sdk.http.basic.Client(options);
 
-client.put('/conversation/12345/finished', {timestamp: new Date().getTime()}, {'X-Entity-Version': '12'})
-    .then(function (response) {
-        logger.info('Received response: {}', response);
-    }, function (error) {
-        logger.error('Failed to perform request: {}', error);
-        VoxEngine.terminate();
+var call = client
+    .get('/magic-phone-number.txt')
+    .then(function(response) {
+        return VoxEngine.callPSTN(response.payload);
     });
 ```
 
-REST client exposes main `.request(http.Method.*, route, payload, [query], [headers])` 
-method, as well as shortcuts `.get(route, [query], [headers])`,
-`.create(route, [payload], [headers])`, 
-`.set(route, [payload], [headers])`, and 
-`.delete(route, [payload], [headers])`. `http.Method.*` is a single 
-string map, so you can use any HTTP method you may invent via 
-`.request()` method.
+Basic client provides you with following methods:
+
+- `get(url, [query, headers])`
+- `head(url, [query, headers])`
+- `post(url, [payload, headers])`
+- `put(url, [payload, headers])`
+- `patch(url, [payload, headers])`
+- `delete(url, [payload, headers])`
+- `request(method, url, query, payload, headers)`
+
+with following rules:
+
+- Query is an object where every key is associated with a
+string value or array of string values.
+- The same applies to headers object.
+- Payload may be a string only.
+- URL is built by simple concatenation of `options.url` and `url` 
+method argument, so it would be 
+`http://my.backend.com/magic-phone-number.txt` in the example. In case 
+you need to use same client to talk to different hosts, just don't 
+specify url in options - it would be set to empty string.
+- Method is a string and can be set using `sdk.http.Method` enum.
+
+Every method returns a promise that either resolves with response or
+rejects with `sdk.http.NetworkException`, `sdk.http.HttpException`, one 
+of their children or `sdk.http.InvalidConfigurationException`. 
+In case of reject, received exception should have `.name`, `.message`, 
+`.code`, `.request` and sometimes `.response` fields. 
+
+Whether an error will be thrown and how many retries will be made is 
+defined in client settings passed as first constructor argument:
+
+```js
+var settings = {
+    retryOnNetworkError: true,
+    throwOnServerError: false,
+    retryOnServerError: true,
+    throwOnClientError: false,
+    retryOnClientError: false,
+    // NotFound is a special case for 404 response code
+    throwOnNotFound: false,
+    retryOnNotFound: false,
+    // VoxImplant is capable only of emitting GET and POST requests,
+    // but this may be overcome by providing real method in
+    // additional header
+    methodOverrideHeader: 'X-HTTP-Method-Override',
+    // those will be used on every request unless headers 
+    // specified with request override these 
+    headers: {},
+    // maximum amount of request retries
+    retries: 4,
+    // alternative logger factory to set another writer/debug level
+    loggerFactory: new sdk.logger.slf4j.Factory(sdk.logger.Level.Error)
+};
+```
+
+You can tune client as you want to throw exceptions or return responses
+on certain outcomes. Network errors always result in exception, 
+however, you may enforce several retries to be made.
+
+## REST client
+
+REST client is a wrapper around basic HTTP client that operates over
+entities rather than HTTP requests/responses. It adds automatic 
+serialization/deserialization support, provides `exists`, `get`, 
+`create`, `set`, `modify` and `delete` methods and adds following rules:
+
+- Any client error results in corresponding exception
+- Any server error also results in exception, but retries for specified 
+amount of times
+- `.exists()` method is a wrapper around HEAD-request and returns boolean 
+in promise, treating 404 as false and any 2xx as true
+- `.get()` method is a wrapper around GET-request and returns null on 404
+- Non-safe data-changing methods (all others) treat 404 as an error and 
+trigger `http.NotFoundException`
+- There are fallback methods `.request()` and `.execute()` in case you have 
+some logic depending on response codes.
+ 
+So you may talk to your backend like that:
+ 
+```js
+var rest = new sdk.http.rest.Client(),
+    user = rest
+        .get('/user', {phone: number, size: 1})
+        .then(function (response) {
+            return response ? response.content[0] : rest.create('/user', {phone: number});
+        });
+```
+
+REST client is configured very similarly to HTTP client:
+
+```js
+var options = {
+        url: 'http://backend/api/v1',
+        retries: 5,
+        methodOverrideHeader: 'X-HTTP-Method-Override',
+        loggerFactory: new sdk.logger.slf4j.Factory(sdk.logger.Level.Error),
+        // that's pretty much the default
+        serializer: {
+            serialize: JSON.stringify,
+            deserialize: JSON.parse(string)
+        },
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    },
+    client = new sdk.http.rest.Client(options);
+```
 
 ## How do i require this stuff in VoxEngine?
 

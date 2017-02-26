@@ -11,11 +11,11 @@ test:
   post:
     - 'npm run test:report'
     # in case tag is pushed, coveralls will try to find current branch and will end on master
-    # this should be reworked some day, since it is not necessary that tag will end on master branch
-    - git fetch origin master && git checkout master && git checkout $CIRCLE_SHA1
-    - 'npm run test:report:publish'
+    - '[ -z "$CIRCLE_BRANCH" ] || npm run test:report:publish'
+    - npm run doc
     - mkdir -p $CIRCLE_TEST_REPORTS/junit
-    - cp build/data/xunit/xunit.xml $CIRCLE_TEST_REPORTS/junit/xunit.xml
+    - cp build/data/xunit/junit.xml $CIRCLE_TEST_REPORTS/junit/junit.xml
+    - cp -r build/* $CIRCLE_ARTIFACTS/
 deployment:
   npm-release:
     tag: /^\d+\.\d+\.\d+$/
