@@ -11,7 +11,7 @@
     "test:report": "npm run test:report:allure",
     "test:report:publish:coverage": "cat build/report/coverage/lcov.info | node_modules/.bin/coveralls",
     "test:report:publish": "npm run test:report:publish:coverage",
-    "npm:login": "node_modules/.bin/npm-cli-login"
+    "doc": "node_modules/.bin/jsdoc -d build/doc lib"
   },
   "repository": {
     "type": "git",
@@ -43,6 +43,7 @@
     "jsdoc": "^3.4.3",
     "mocha": "^3.1.2",
     "mocha-allure-reporter": "^1.2.4",
+    "mocha-junit-reporter": "^1.13.0",
     "mocha-multi": "^0.9.1",
     "mocha-multi-reporters": "^1.1.1",
     "npm-cli-login": "0.0.10",
