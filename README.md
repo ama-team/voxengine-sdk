@@ -32,11 +32,11 @@ var logger = new sdk.logger.slf4j.Slf4j('logger-name');
 
 var user = 'Pavel',
     elapsed = 12.345,
-    event = {name: 'CallEvents.Connected'};
+    metadata = {roles: ['lead'], extras: []};
     
-call.addEventListener(CallEvents.Connected, function (event) {
-    logger.info('{} has responded in {} seconds (event: {})', user, elapsed, event);
-    // [INFO] logger-name: Pavel has responded in 12.345 seconds (event: {"name": "CallEvents.Connected"})
+call.addEventListener(CallEvents.Connected, function () {
+    logger.info('{} has responded in {} seconds (meta: {})', user, elapsed, metadata);
+    // [INFO] logger-name: Pavel has responded in 12.345 seconds (meta: {"roles": ["lead"], "extras": []})
 });
 ```
 
@@ -94,7 +94,7 @@ Basic client provides you with following methods:
 - `put(url, [payload, headers])`
 - `patch(url, [payload, headers])`
 - `delete(url, [payload, headers])`
-- `request(method, url, query, payload, headers)`
+- `request(method, url, [query, payload, headers])`
 
 with following rules:
 
@@ -113,7 +113,8 @@ Every method returns a promise that either resolves with response or
 rejects with `sdk.http.NetworkException`, `sdk.http.HttpException`, one 
 of their children or `sdk.http.InvalidConfigurationException`. 
 In case of reject, received exception should have `.name`, `.message`, 
-`.code`, `.request` and sometimes `.response` fields. 
+`.code`, `.request` and sometimes `.response` fields (except for 
+`InvalidConfigurationException`). 
 
 Whether an error will be thrown and how many retries will be made is 
 defined in client settings passed as first constructor argument:
@@ -179,15 +180,21 @@ REST client is configured very similarly to HTTP client:
 
 ```js
 var options = {
+        // this will be prepended to all routes you pass into client
         url: 'http://backend/api/v1',
-        retries: 5,
+        // you will certainly need to set this if you're going to use anything but .get/.create
         methodOverrideHeader: 'X-HTTP-Method-Override',
-        loggerFactory: new sdk.logger.slf4j.Factory(sdk.logger.Level.Error),
         // that's pretty much the default
+        retries: 4,
+        // in case you want to override default logger
+        loggerFactory: new sdk.logger.slf4j.Factory(sdk.logger.Level.Error),
+        // this is set by default as well
         serializer: {
             serialize: JSON.stringify,
-            deserialize: JSON.parse(string)
+            deserialize: JSON.parse
         },
+        // again, a set of headers that will always be present in 
+        // requests (unless overriden in particular request)
         headers: {
             'Content-Type': 'application/json'
         }
