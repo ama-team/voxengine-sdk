@@ -21,12 +21,12 @@ var sdk = require('@ama-team/voxengine-sdk');
 
 ## SLF4J-alike Logger
 
-This library wraps standard `Logger` and adds support for log levels 
-(that shouldn't be very useful, but who knows) and log message 
-parameters (substitutions):
+This library wraps standard `Logger` and adds support for logger names,
+log levels (that shouldn't be very useful, but who knows) and log 
+message parameters (substitutions):
 
 ```js
-var logger = new sdk.logger.slf4j.Slf4j('logger-name');
+var logger = sdk.logger.slf4j.Slf4j.create('logger.name');
 
 // ...
 
@@ -36,35 +36,60 @@ var user = 'Pavel',
     
 call.addEventListener(CallEvents.Connected, function () {
     logger.info('{} has responded in {} seconds (meta: {})', user, elapsed, metadata);
-    // [INFO] logger-name: Pavel has responded in 12.345 seconds (meta: {"roles": ["lead"], "extras": []})
+    // [INFO] logger.name: Pavel has responded in 12.345 seconds (meta: {"roles": ["lead"], "extras": []})
 });
 ```
 
 This logger provides `.trace()`, `.debug()`, `.notice()`, `.info()`, 
 `.warn()`, `.error()` and `.log(logger.Level.*, pattern, substitutions...)` 
-methods to print things, and `.setThreshold` method to configure output
-filtering.
-
-Full logger constructor signature looks like this:
-
-```js
-new Slf4j(name, threshold, writer);
-```
-
-where name will be printed before real content (to distinguish 
-different loggers), threshold is `sdk.logger.Level` enum instance, and 
-writer is anything that has `.write` method accepting a string.
-
-There is also factory to simplify new logger creation:
+methods to print things. Also there are `.attach(key, value)`, 
+`.detach(key)`, `.attachAll(object)` and `.detachAll()` methods for
+functionality known as Mapped Diagnostic Context in Logback:
 
 ```js
-var factory = new sdk.logger.slf4j.Factory(sdk.logger.Level.Info, Logger),
-    httpLogger = factory.create('scenario.http'),
-    logicLogger = factory.create('scenario.logic')
+var logger = sdk.logger.slf4j.Slf4j.create('logger.name')
+logger.attach('id', '123')
+logger.info('Sending custom event')
+// [INFO] logger.name [id=123]: Sending custom event 
 ```
 
-This will probably be useful for other VoxImplant-related packages 
-rather than scenarios, though.
+This may help you if you have similar logging output but need to 
+distinguish components one from another.
+
+Whenever you need to turn off particular logger or increase verbosity
+in other, you may use `Slf4j` static methods to configure previously-created
+loggers:
+
+- `Slf4j.setThreshold([name], logger.Level)` - sets threshold for 
+logger with name, if name is omitted, global default threshold is set.
+- `Slf4j.setWriter([name], Logger || Writable)` - same thing for writer.
+
+### Internals
+
+Every logger is created in `Context` that defines which logger should
+receive which threshold and writer. `Slf4j.create()` is basically a 
+wrapper for `slf4j~DefaultContext.create()`, and that very context is
+passed to the logger at creation, so on every call it queries context
+for current configuration.
+
+`Slf4j` class is fully compatible (has all the types / quacks like a)
+with `slf4j.Context` instance, so if you need to substitute default 
+context for any reason, you can do that with ease:
+
+```js
+function Component(loggerContext) {
+  loggerContext = loggerContext || sdk.slf4j.Slf4j;
+  var logger = loggerContext.create('my.super.component')
+  this.shout = function() {
+  logger.info('I may be using standalone context! Or not.')
+  }
+}
+
+var localContext = new sdk.logger.slf4j.Context()
+localContext.setWriter(new TestReportWriter())
+var component = new Component(localContext)
+component.shout()
+```
 
 ## Basic HTTP Client
 
