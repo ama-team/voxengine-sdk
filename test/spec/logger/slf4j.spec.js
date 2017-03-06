@@ -303,8 +303,10 @@ describe('/logger', function () {
         expect(logger).to.be.instanceOf(Slf4j)
       })
 
-      it('should reuse loggers', function () {
-        expect(context.create('dummy')).to.eq(context.create('dummy'))
+      it('should not reuse loggers', function () {
+        allure.description('Context should not reuse loggers because that ' +
+          'would render diagnostic context useless')
+        expect(context.create('dummy')).to.not.eq(context.create('dummy'))
       })
 
       it('should create logger with expected writer', function () {
