@@ -30,7 +30,7 @@ describe('/http', function () {
                             return _;
                         }
                     };
-                return new Rest(transport, opts);
+                return new Rest(opts, transport);
             };
 
         describe('.Client', function () {
@@ -93,7 +93,7 @@ describe('/http', function () {
 
                         return client[method].call(client, '/entity').should.eventually.be.rejectedWith(eClass);
                     });
-                    
+
                     it('should return passed data on 200 response', function () {
                         var payload = 'Some text',
                             client = clientFactory(transportFactory({code: 200, text: payload}));

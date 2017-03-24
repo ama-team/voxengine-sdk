@@ -5,8 +5,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Slf4j now provides static methods to create and manage loggers
 ### Changed
-- Decoupled basic HTTP client from REST HTTP client
+- Slf4j Factory has been substituted with Context class
+
+## [0.2.0] - 2017-02-26
+### Added
+- Basic HTTP client
+- Completely different REST client
+### Changed
+- Removed old REST client
 - Refactored HTTP exceptions
 - Dropped deprecated functionality
 

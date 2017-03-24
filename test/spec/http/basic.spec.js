@@ -7,9 +7,6 @@ var chai = require('chai'),
     Method = Clients.Method,
     Client = Clients.basic.Client;
 
-// todo
-Logger = {write: console.log.bind(console)};
-
 function branchStopper() {
     assert(false, 'This branch should have never been executed');
 }
@@ -27,10 +24,13 @@ describe('/http', function () {
                      index = index % responses.length;
                      return Promise.resolve(responses[index++]);
                 });
+            },
+            clientFactory = function (transport, options) {
+                return new Client(options || {}, transport);
             };
 
         it('should correctly execute request', function () {
-            return new Client(transportFactory({code: 200, headers: {}, text: '{}'}), {})
+            return clientFactory(transportFactory({code: 200, headers: {}, text: '{}'}), {})
                 .request(Method.Get, '/test')
                 .then(function (response) {
                     expect(response.code).to.eq(200);
@@ -50,7 +50,7 @@ describe('/http', function () {
                     'kept: d'
                 ],
                 transport = transportFactory({code: 200, headers: {}, text: '{}'});
-            return new Client(transport, options)
+            return clientFactory(transport, options)
                 .request(Method.Get, '/test', [], null, overrides)
                 .then(function () {
                     expect(transport.getCall(0).args[1].headers.sort()).to.deep.eq(expected.sort());
@@ -60,7 +60,7 @@ describe('/http', function () {
         ['get', 'head'].forEach(function (method) {
             it('should provide ' + method + ' request method', function () {
                 var transport = transportFactory({code: 200, headers: {}, text: '{}'}),
-                    client = new Client(transport, {methodOverrideHeader: 'X-HMO'});
+                    client = clientFactory(transport, {methodOverrideHeader: 'X-HMO'});
                 return client[method].call(client, '/test', {alpha: 'beta'}, {'X-Gamma': 'delta'})
                     .then(function () {
                         var call = transport.getCall(0);
@@ -74,7 +74,7 @@ describe('/http', function () {
         ['post', 'put', 'patch', 'delete'].forEach(function (method) {
             it('should provide ' + method + ' request method', function () {
                 var transport = transportFactory({code: 200, headers: {}, text: '{}'}),
-                    client = new Client(transport, {methodOverrideHeader: 'X-HMO'}),
+                    client = clientFactory(transport, {methodOverrideHeader: 'X-HMO'}),
                     payload = '{"alpha": "beta"}';
                 return client[method].call(client, '/test', payload, {'X-Gamma': 'delta'})
                     .then(function () {
@@ -113,7 +113,7 @@ describe('/http', function () {
                     client;
 
                 opts['retryOn' + errorType] = true;
-                client = new Client(transport, opts);
+                client = clientFactory(transport, opts);
 
                 return client.get('/test').then(function (response) {
                     expect(response.code).to.eq(200);
@@ -128,7 +128,7 @@ describe('/http', function () {
 
                 opts['retryOn' + errorType] = false;
                 opts['throwOn' + errorType] = true;
-                client = new Client(transport, opts);
+                client = clientFactory(transport, opts);
 
                 return client.get('/test').then(branchStopper, function (e) {
                     expect(e).to.be.instanceOf(error.exception);
@@ -147,7 +147,7 @@ describe('/http', function () {
 
                 opts['retryOn' + errorType] = false;
                 opts['throwOn' + errorType] = false;
-                client = new Client(transport, opts);
+                client = clientFactory(transport, opts);
 
                 return client.get('/test').then(function (response) {
                     expect(response.code).eq(error.code);
@@ -158,7 +158,7 @@ describe('/http', function () {
 
         it('should retry not more times than specified in settings', function () {
             var transport = transportFactory({code: 500}),
-                client = new Client(transport, {retries: 4, throwOnServerError: false, retryOnServerError: true});
+                client = clientFactory(transport, {retries: 4, throwOnServerError: false, retryOnServerError: true});
 
             return client.get('/test').then(function (response) {
                 expect(response.code).to.eq(500);
@@ -168,7 +168,7 @@ describe('/http', function () {
 
         it('should correctly handle response with unknown code', function () {
             var transport = transportFactory({code: -500}),
-                client = new Client(transport, {retryOnNetworkError: false});
+                client = clientFactory(transport, {retryOnNetworkError: false});
 
             return client.get('/test').then(branchStopper, function (error) {
                 expect(error).to.be.instanceOf(Clients.NetworkException);
@@ -178,7 +178,7 @@ describe('/http', function () {
 
         it('should correctly handle response with no code', function () {
             var transport = transportFactory({}),
-                client = new Client(transport, {retryOnNetworkError: false});
+                client = clientFactory(transport, {retryOnNetworkError: false});
 
             return client.get('/test').then(branchStopper, function (error) {
                 expect(error).to.be.instanceOf(Clients.NetworkException);
@@ -188,7 +188,7 @@ describe('/http', function () {
 
         it('should not let execute non-get/post request without method override header', function () {
             var transport = transportFactory({}),
-                client = new Client(transport);
+                client = clientFactory(transport);
 
             return client.put('/test').then(branchStopper, function (error) {
                 expect(error).to.be.instanceOf(Clients.InvalidConfigurationException);
@@ -198,7 +198,7 @@ describe('/http', function () {
 
         it('should add method override header for non-get/post request', function () {
             var transport = transportFactory({code: 200}),
-                client = new Client(transport, {methodOverrideHeader: 'X-HMO'});
+                client = clientFactory(transport, {methodOverrideHeader: 'X-HMO'});
 
             return client.put('/test').then(function () {
                 expect(transport.getCall(0).args[1].headers).to.deep.eq(['X-HMO: PUT']);
