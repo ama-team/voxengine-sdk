@@ -1,187 +1,190 @@
-var sinon = require('sinon'),
-    chai = require('chai'),
-    should = chai.should(),
-    assert = chai.assert,
-    chaiPromised = require('chai-as-promised'),
-    Clients = require('../../../lib/http'),
-    rest = require('../../../lib/http/rest'),
-    Rest = rest.Client;
+/* eslint-env mocha */
+/* eslint-disable no-unused-expressions */
 
-chai.use(chaiPromised);
+var sinon = require('sinon')
+var chai = require('chai')
+var assert = chai.assert
+var Clients = require('../../../lib/http')
+var rest = require('../../../lib/http/rest')
+var Rest = rest.Client
+
+chai.use(require('chai-as-promised'))
+chai.should()
+
+function through (_) {
+  return _
+}
 
 // todo: save log output in allure
 
-describe('/http', function () {
+describe('Unit', function () {
+  describe('/http', function () {
     describe('/rest.js', function () {
-        var transportFactory = function () {
-                var responses = Array.prototype.slice.call(arguments, 0),
-                    index = 0;
-                return sinon.spy(function () {
-                    return Promise.resolve(responses[index++ % responses.length]);
-                });
-            },
-            clientFactory = function (transport, opts) {
-                opts = opts || {methodOverrideHeader: 'X-MOH'};
-                opts.serializer = opts.serializer || {
-                        serialize: function (_) {
-                            return _;
-                        },
-                        deserialize: function (_) {
-                            return _;
-                        }
-                    };
-                return new Rest(opts, transport);
-            };
+      var serializer
 
-        describe('.Client', function () {
-            describe('.exists', function () {
-                it('should return true for code 200 response', function () {
-                    var transport = transportFactory({code: 200}),
-                        client = clientFactory(transport);
+      beforeEach(function () {
+        serializer = {
+          serialize: sinon.spy(through),
+          deserialize: sinon.spy(through)
+        }
+      })
+      var transportFactory = function () {
+        var responses = Array.prototype.slice.call(arguments, 0)
+        var index = 0
+        return sinon.spy(function () {
+          return Promise.resolve(responses[index++ % responses.length])
+        })
+      }
+      var clientFactory = function (transport, opts) {
+        opts = opts || {methodOverrideHeader: 'X-MOH'}
+        opts.serializer = opts.serializer || serializer
+        return new Rest(opts, transport)
+      }
 
-                    return client.exists('/entity').should.eventually.eq(true);
-                });
+      describe('.Client', function () {
+        describe('.exists', function () {
+          it('should return true for code 200 response', function () {
+            var transport = transportFactory({code: 200})
+            var client = clientFactory(transport)
 
-                it('should return true for code 201 response', function () {
-                    var transport = transportFactory({code: 201}),
-                        client = clientFactory(transport);
+            return client.exists('/entity').should.eventually.eq(true)
+          })
 
-                    return client.exists('/entity').should.eventually.eq(true);
-                });
+          it('should return true for code 201 response', function () {
+            var transport = transportFactory({code: 201})
+            var client = clientFactory(transport)
 
-                it('should return false for code 404 response', function () {
-                    var transport = transportFactory({code: 404}),
-                        client = clientFactory(transport);
+            return client.exists('/entity').should.eventually.eq(true)
+          })
 
-                    return client.exists('/entity').should.eventually.eq(false);
-                });
-            });
+          it('should return false for code 404 response', function () {
+            var transport = transportFactory({code: 404})
+            var client = clientFactory(transport)
 
-            describe('.get', function () {
-                it('should return deserialized payload for code 200 response', function () {
-                    var payload = 'Some text',
-                        transport = transportFactory({code: 200, text: payload}),
-                        client = clientFactory(transport);
+            return client.exists('/entity').should.eventually.eq(false)
+          })
+        })
 
-                    return client.get('/entity').should.eventually.eq(payload);
-                });
+        describe('.get', function () {
+          it('should return deserialized payload for code 200 response', function () {
+            var payload = 'Some text'
+            var transport = transportFactory({code: 200, text: payload})
+            var client = clientFactory(transport)
 
-                it('should return deserialized payload for code 201 on .get() call', function () {
-                    var payload = 'Some text',
-                        transport = transportFactory({code: 200, text: payload}),
-                        client = clientFactory(transport);
+            return client.get('/entity').should.eventually.eq(payload)
+          })
 
-                    return client.get('/entity').should.eventually.eq(payload);
-                });
+          it('should return deserialized payload for code 201 on .get() call', function () {
+            var payload = 'Some text'
+            var transport = transportFactory({code: 200, text: payload})
+            var client = clientFactory(transport)
 
-                it('should return null for code 404 on .get() call', function () {
-                    var payload = 'Some text',
-                        transport = transportFactory({code: 404, text: payload}),
-                        client = clientFactory(transport);
+            return client.get('/entity').should.eventually.eq(payload)
+          })
 
-                    return client.get('/entity').should.eventually.eq(null);
-                });
-            });
+          it('should return null for code 404 on .get() call', function () {
+            var payload = 'Some text'
+            var transport = transportFactory({code: 404, text: payload})
+            var client = clientFactory(transport)
 
-            var unsafe = ['create', 'set', 'modify', 'delete'];
+            return client.get('/entity').should.eventually.eq(null)
+          })
+        })
 
-            unsafe.forEach(function (method) {
-                describe('.' + method, function () {
-                    it('should throw NotFoundException on 404 response', function () {
-                        var client = clientFactory(transportFactory({code: 404})),
-                            eClass = Clients.NotFoundException;
+        var unsafe = ['create', 'set', 'modify', 'delete']
 
-                        return client[method].call(client, '/entity').should.eventually.be.rejectedWith(eClass);
-                    });
+        unsafe.forEach(function (method) {
+          describe('.' + method, function () {
+            it('throws NotFoundException on 404 response', function () {
+              var client = clientFactory(transportFactory({code: 404}))
+              var ExceptionClass = Clients.NotFoundException
+              var call = client[method]('/entity')
 
-                    it('should return passed data on 200 response', function () {
-                        var payload = 'Some text',
-                            client = clientFactory(transportFactory({code: 200, text: payload}));
+              return call.should.eventually.be.rejectedWith(ExceptionClass)
+            })
 
-                        return client[method].call(client, '/entity').should.eventually.eq(payload);
-                    });
+            it('returns passed data on 200 response', function () {
+              var payload = 'Some text'
+              var client = clientFactory(transportFactory({
+                code: 200,
+                text: payload
+              }))
 
-                    it('should return passed data on 201 response', function () {
-                        var payload = 'Some text',
-                            client = clientFactory(transportFactory({code: 201, text: payload}));
+              return client[method]('/entity').should.eventually.eq(payload)
+            })
 
-                        return client[method].call(client, '/entity').should.eventually.eq(payload);
-                    });
+            it('should return passed data on 201 response', function () {
+              var payload = 'Some text'
+              var client = clientFactory(transportFactory({
+                code: 201,
+                text: payload
+              }))
 
-                    it('should call serializer on provided payload', function () {
-                        var serializer = sinon.spy(function (data) {
-                                return data;
-                            }),
-                            settings = {
-                                methodOverrideHeader: 'X-MOH',
-                                serializer: {
-                                    serialize: serializer,
-                                    deserialize: function (data) {
-                                        return data;
-                                    }
-                                }
-                            },
-                            client = new Rest(transportFactory({code: 200}), settings),
-                            payload = 'Some text';
+              return client[method]('/entity').should.eventually.eq(payload)
+            })
 
-                        return client[method].call(client, '/entity', payload).then(function () {
-                            serializer.callCount.should.eq(1);
-                            serializer.getCall(0).args[0].should.eq(payload);
-                        });
-                    });
-                });
-            });
+            it('calls serializer on provided payload', function () {
+              var options = {
+                methodOverrideHeader: 'X-MOH',
+                serializer: serializer
+              }
+              var client = new Rest(options, transportFactory({code: 200}))
+              var payload = 'Some text'
 
-            it('should work correctly without any settings provided', function () {
-                var data = 'Some text',
-                    payload = JSON.stringify(data),
-                    client = new Rest(transportFactory({code: 200, text: payload}));
+              return client[method]('/entity', payload).then(function () {
+                serializer.serialize.callCount.should.eq(1)
+                serializer.serialize.getCall(0).args[0].should.eq(payload)
+              })
+            })
+          })
+        })
 
-                return client.get('/entity').should.eventually.eq(data);
-            });
+        it('works correctly without any settings provided', function () {
+          var data = 'Some text'
+          var payload = JSON.stringify(data)
+          var client = new Rest(transportFactory({code: 200, text: payload}))
 
-            it('should correctly process empty response headers', function () {
-                // yay, 100% coverage
-                var executor = sinon.spy(function () {
-                        return Promise.resolve({code: 200, text: ''});
-                    }),
-                    basic = {execute: executor},
-                    client = new Rest(null, {client: basic});
+          return client.get('/entity').should.eventually.eq(data)
+        })
 
-                return client.request(Clients.Method.Get, '/entity').then(function () {
-                    executor.callCount.should.eq(1);
-                });
-            });
+        it('correctly processes empty response headers', function () {
+          // yay, 100% coverage
+          var executor = sinon.spy(function () {
+            return Promise.resolve({code: 200, text: ''})
+          })
+          var basic = {execute: executor}
+          var client = new Rest({client: basic})
 
-            it('should pass through query, headers and payload', function () {
-                var executor = sinon.spy(function () {
-                        return Promise.resolve({code: 200, text: ''});
-                    }),
-                    basic = {execute: executor},
-                    serializer = {
-                        serialize: function (data) {
-                            return data;
-                        },
-                        deserialize: function (data) {
-                            return data;
-                        }
-                    },
-                    client = new Rest(null, {client: basic, serializer: serializer}),
-                    payload = 'Some text',
-                    query = {alpha: [1, 2]},
-                    headers = {alpha: [1, 2]};
+          return client
+            .request(Clients.Method.Get, '/entity')
+            .then(function () {
+              executor.callCount.should.eq(1)
+            })
+        })
 
-                return client
-                    .request(Clients.Method.Post, '/entity', payload, query, headers)
-                    .then(function () {
-                        executor.callCount.should.eq(1);
-                        var request = executor.getCall(0).args[0];
-                        assert(request);
-                        request.query.should.deep.eq(query);
-                        request.headers.should.deep.eq(headers);
-                        request.payload.should.deep.eq(payload);
-                    });
-            });
-        });
-    });
-});
+        it('passes through query, headers and payload', function () {
+          var executor = sinon.spy(function () {
+            return Promise.resolve({code: 200, text: ''})
+          })
+          var basic = {execute: executor}
+          var serializer = {serialize: through, deserialize: through}
+          var client = new Rest({client: basic, serializer: serializer})
+          var payload = 'Some text'
+          var query = {alpha: [1, 2]}
+          var headers = {alpha: [1, 2]}
+
+          return client
+            .request(Clients.Method.Post, '/entity', payload, query, headers)
+            .then(function () {
+              executor.callCount.should.eq(1)
+              var request = executor.getCall(0).args[0]
+              assert(request)
+              request.query.should.deep.eq(query)
+              request.headers.should.deep.eq(headers)
+              request.payload.should.deep.eq(payload)
+            })
+        })
+      })
+    })
+  })
+})

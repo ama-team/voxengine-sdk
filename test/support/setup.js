@@ -1,3 +1,6 @@
+/* global allure */
+/* eslint-env mocha */
+
 var AllurePolyfill = require('@ama-team/allure-polyfill')
 var sinon = require('sinon')
 
@@ -7,7 +10,7 @@ var logs = []
 var requests = []
 
 // todo: not good
-//noinspection JSUnusedGlobalSymbols
+// noinspection JSUnusedGlobalSymbols
 global.Net = {
   HttpRequestOptions: function () {
     this.headers = {}
@@ -17,7 +20,7 @@ global.Net = {
   httpRequestAsync: sinon.spy(function (url, options) {
     requests.push({url: url, options: options})
   })
-};
+}
 
 // todo
 global.Logger = {
