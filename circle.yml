@@ -12,22 +12,6 @@ parameters:
   docker:
     image: &docker_image circleci/node:4.8
 
-workflows:
-  version: 2
-  default:
-    jobs:
-      - build:
-          filters:
-            tags:
-              only: /.*/
-      - publish:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /\d+\.\d+\.\d+/
-            branch:
-              ignore: /.*/
 version: 2
 jobs:
   build:
@@ -119,3 +103,20 @@ jobs:
           command: echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ~/.npmrc
       - run:
           command: npm publish --access public
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+      - publish:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /\d+\.\d+\.\d+/
+            branches:
+              ignore: /.*/
