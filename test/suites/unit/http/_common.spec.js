@@ -4,7 +4,7 @@
 
 var chai = require('chai')
 var expect = chai.expect
-var Commons = require('../../../lib/http/_common')
+var Commons = require('../../../../lib/http/_common')
 
 describe('Unit', function () {
   describe('/http', function () {

@@ -1,0 +1,12 @@
+{
+  "reporterEnabled": "spec, xunit, mocha-junit-reporter, mocha-allure-reporter",
+  "mochaAllureReporterReporterOptions": {
+    "targetDir": "build/data/allure"
+  },
+  "xunitReporterOptions": {
+    "output": "build/data/xunit/xunit.xml"
+  },
+  "mochaJunitReporterReporterOptions": {
+    "mochaFile": "build/data/junit/junit.xml"
+  }
+}

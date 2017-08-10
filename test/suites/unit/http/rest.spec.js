@@ -4,8 +4,8 @@
 var sinon = require('sinon')
 var chai = require('chai')
 var assert = chai.assert
-var Clients = require('../../../lib/http')
-var rest = require('../../../lib/http/rest')
+var Clients = require('../../../../lib/http/index')
+var rest = require('../../../../lib/http/rest')
 var Rest = rest.Client
 
 chai.use(require('chai-as-promised'))

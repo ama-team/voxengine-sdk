@@ -17,8 +17,7 @@ instrumentation:
     es-modules: false
 reporting:
     print: summary
-    reports:
-        - lcov
+    reports: []
     dir: ./build/report/coverage
     watermarks:
         statements: [50, 80]

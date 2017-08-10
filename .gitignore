@@ -2,8 +2,11 @@
 /node_modules
 npm-debug.log
 
-# Build files
+# Artifacts
 build
+tmp
+test/metadata
+test/report
 
 # IDE Files
 .idea
