@@ -83,6 +83,7 @@ jobs:
       - run:
           name: 'Report: Publish'
           command: jake test:report:publish
+          when: always
       - type: store-artifacts
         path: tmp/metadata
         destination: metadata
