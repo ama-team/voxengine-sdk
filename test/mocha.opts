@@ -1,3 +1,0 @@
---recursive
---reporter mocha-multi-reporters --reporter-options configFile=test/support/mocha-multi-reporters.json
-test/support/setup.js test/spec/**/*.js

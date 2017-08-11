@@ -1,0 +1,26 @@
+encode:
+  - name: encodes empty input as empty string
+    tests:
+      - input: [{}]
+        output: ''
+  - name: encodes falsey input as empty string
+    tests:
+      - input: [~]
+        output: ''
+  - name: encodes synthetic query input {index} according to expectation
+    tests:
+      - input:
+        - metadata: [12]
+          variable: [truth]
+        output: metadata=12&variable=truth
+      - input:
+        - metadata: 12
+          variable: truth
+        output: metadata=12&variable=truth
+  - name: encodes real-world example {index} according to expectation
+    tests:
+      - input:
+        - metadata:
+            - vendor:ЗАО "АстроФизика"
+            - flags.debug=true
+        output: 'metadata=vendor%3A%D0%97%D0%90%D0%9E%20%22%D0%90%D1%81%D1%82%D1%80%D0%BE%D0%A4%D0%B8%D0%B7%D0%B8%D0%BA%D0%B0%22&metadata=flags.debug%3Dtrue'

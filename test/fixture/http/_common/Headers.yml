@@ -1,0 +1,79 @@
+override:
+  - name: merges example {index} according to expectation
+    tests:
+      - input: []
+        output: {}
+      - input:
+          - alpha: [1]
+        output:
+          alpha: [1]
+      - input:
+          - alpha: [1, 2]
+          - gamma: [1, 2]
+        output:
+          alpha: [1, 2]
+          gamma: [1, 2]
+      - input:
+          - alpha: [1, 1]
+          - beta: [2, 2]
+            gamma: [2, 2]
+          - gamma: [3]
+        output:
+          alpha: [1, 1]
+          beta: [2, 2]
+          gamma: [3]
+decode:
+  - name: decodes empty input to empty object
+    tests:
+      - input:
+          - []
+        output: {}
+  - name: decodes falsey input into empty object
+    tests:
+      - input: [~]
+        output: {}
+  - name: decodes example {index} according to expectation
+    tests:
+      - input:
+          - - key: Server
+              value: WebStorm 2016.3.3
+            - key: X-Content-Type-Options
+              value: nosniff
+            - key: X-Frame-Options
+              value: SameOrigin
+            - key: X-Frame-Options
+              value: SameOrigin
+        output:
+          Server: [WebStorm 2016.3.3]
+          X-Content-Type-Options: [nosniff]
+          X-Frame-Options:
+            - SameOrigin
+            - SameOrigin
+encode:
+  - name: encodes empty input as empty array
+    tests:
+      - input: [{}]
+        output: []
+  - name: encodes falsey input as empty array
+    tests:
+      - input: [~]
+        output: []
+  - name: encodes example {index} according to expectation
+    tests:
+      - input:
+          - X-Index: [23]
+            X-Link:
+              - rel=user;href=/user/123
+              - rel=self;href=/entity
+        output:
+          - 'X-Index: 23'
+          - 'X-Link: rel=user;href=/user/123'
+          - 'X-Link: rel=self;href=/entity'
+  - name: encodes non-normalized example {index} according to expectation
+    tests:
+      - input:
+          - X-Index: 23
+            X-Link: rel=user;href=/user/123
+        output:
+          - 'X-Index: 23'
+          - 'X-Link: rel=user;href=/user/123'

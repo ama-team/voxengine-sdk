@@ -2,8 +2,10 @@
 /node_modules
 npm-debug.log
 
-# Build files
+# Artifacts
 build
+tmp
+package-lock.json
 
 # IDE Files
 .idea
