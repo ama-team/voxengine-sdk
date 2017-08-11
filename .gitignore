@@ -5,8 +5,7 @@ npm-debug.log
 # Artifacts
 build
 tmp
-test/metadata
-test/report
+package-lock.json
 
 # IDE Files
 .idea

@@ -1,24 +1,34 @@
 var Mocha = require('mocha')
 var glob = require('glob')
+var FileSystem = require('fs-extra')
+var Path = require('path')
 
 var root = __dirname
-var artifactDirectory = __dirname + '/tmp'
+var libraryDirectory = root + '/lib'
+var artifactDirectory = root + '/tmp'
+var minificationDirectory = artifactDirectory + '/minified'
 var reportDirectory = artifactDirectory + '/report'
 var allureReportDirectory = reportDirectory + '/allure'
 var coverageReportDirectory = reportDirectory + '/coverage'
 var metadataDirectory = artifactDirectory + '/metadata'
 var allureMetadataDirectory = metadataDirectory + '/allure'
 var coverageMetadataDirectory = metadataDirectory + '/coverage'
-var suites = ['unit']
+
+var suites = ['unit', 'integration']
+
+var execute = function (command, options) {
+  return new Promise(function (resolve, reject) {
+    if (command.join) {
+      command = command.join(' ')
+    }
+    jake.exec(command, options || {printStdout: true}, function (error, value) {
+      error ? reject(error) : resolve(value);
+    })
+  })
+}
 
 var exec = function (command, options) {
-  if (command.join) {
-    command = command.join(' ')
-  }
-  var callback = function (error, value) {
-    error ? fail(error) : complete(value)
-  }
-  return jake.exec(command, options || {printStdout: true}, callback)
+  return execute(command, options).then(complete, fail)
 }
 
 var chain = function (tasks, ignoreErrors) {
@@ -99,14 +109,20 @@ namespace('test', function () {
     })
   })
 
+  task('clean', {async: true}, function () {
+    FileSystem.emptyDir(metadataDirectory).then(complete, fail)
+  })
+
   task('report', {async: true}, function () {
     chain(['test:report:allure', 'test:report:coverage'])
   })
 
   task('coverage', {async: true}, function () {
-    chain(suites.map(function (suite) {
+    var tasks = suites.map(function (suite) {
       return jake.Task['test:' + suite + ':coverage']
-    }))
+    })
+    tasks.unshift(jake.Task['test:clean'])
+    chain(tasks)
   })
 
   task('with-report', {async: true}, function () {
@@ -114,7 +130,7 @@ namespace('test', function () {
   })
 
   suites.forEach(function (suite) {
-    task(suite, function (regexp) {
+    task(suite, {async: true}, function (regexp) {
       var options = {
         reporter: 'mocha-multi-reporters',
         reporterOptions: {
@@ -142,9 +158,7 @@ namespace('test', function () {
           mocha.addFile(files[i])
         }
         mocha.run(function (failures) {
-          process.on('exit', function () {
-            process.exit(failures > 0 ? 1 : 0)
-          })
+          failures === 0 ? complete(0) : fail(failures)
         })
       })
     })
@@ -169,11 +183,39 @@ namespace('test', function () {
 })
 
 task('test', {async: true}, function () {
-  chain(suites.map(function (suite) {
+  var tasks = suites.map(function (suite) {
     return jake.Task['test:' + suite]
-  }))
+  })
+  tasks.unshift(jake.Task['test:clean'])
+  chain(tasks)
 })
 
 task('lint', {async: true}, function () {
   exec('node_modules/.bin/standard')
+})
+
+task('minify', {async: true}, function () {
+  glob(libraryDirectory + '/**/*.js', function (error, files) {
+    if (error) {
+      return fail(error);
+    }
+    Promise.all(files.map(function (file) {
+      var relative = file.substr(libraryDirectory.length + 1)
+      var target = minificationDirectory + '/' + relative
+      var parentDirectory = Path.resolve(target, '..')
+      return FileSystem
+        .mkdirs(parentDirectory)
+        .then(function () {
+          var command = [
+            root + '/node_modules/.bin/uglifyjs',
+            file,
+            '-m',
+            '-c',
+            '-o',
+            target
+          ]
+          return execute(command)
+        })
+    }))
+  })
 })
