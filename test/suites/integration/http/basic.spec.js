@@ -2,17 +2,20 @@
 /* eslint-disable no-unused-expressions */
 /* global transportFactory */
 
-var chai = require('chai')
-var expect = chai.expect
-var Clients = require('../../../../lib/http')
+var Sinon = require('sinon')
+var Chai = require('chai')
+var expect = Chai.expect
+var SDK = require('../../../../lib')
+var Clients = SDK.Http
 var Method = Clients.Method
 var Client = Clients.Basic
-var Loggers = require('../../../../lib/logger')
+var Loggers = SDK.Logger
 
-chai.use(require('chai-as-promised'))
+Chai.use(require('chai-as-promised'))
+Chai.use(require('chai-string'))
 
 function branchStopper () {
-  chai.assert(false, 'This branch should have never been executed')
+  Chai.assert(false, 'This branch should have never been executed')
 }
 
 describe('Integration', function () {
@@ -32,6 +35,33 @@ describe('Integration', function () {
         beforeEach(function () {
           transport = transportFactory({code: 200, headers: [], text: '{}'})
           client = clientFactory(transport, {url: BASE_URL})
+        })
+
+        describe('< new', function () {
+          it('uses Net.httpRequestAsync transport if none passed', function () {
+            Net.httpRequestAsync = Sinon.spy(function () {
+              return Promise.resolve({code: 200})
+            })
+            var client = clientFactory()
+            var path = '/path'
+            return client
+              .request(Method.Get, path)
+              .then(function () {
+                expect(Net.httpRequestAsync.callCount).to.eq(1)
+                expect(Net.httpRequestAsync.getCall(0).args[0]).to.endWith(path)
+              })
+          })
+
+          it('tolerates invalid options input', function () {
+            var client = new Client(null, transport)
+            var path = '/path'
+            return client
+              .request(Method.Get, path)
+              .then(function () {
+                expect(transport.callCount).to.eq(1)
+                expect(transport.getCall(0).args[0]).to.endWith(path)
+              })
+          })
         })
 
         describe('#request', function () {
@@ -89,8 +119,7 @@ describe('Integration', function () {
               .request(Method.Get, '/', query)
               .then(function () {
                 var url = transport.getCall(0).args[0]
-                url = url.replace('http://localhost/', '')
-                expect(url.toLowerCase()).to.eq(expectation.toLowerCase())
+                expect(url.toLowerCase()).to.endWith(expectation.toLowerCase())
               })
           })
 

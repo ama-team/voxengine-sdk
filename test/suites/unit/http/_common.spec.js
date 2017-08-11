@@ -48,6 +48,14 @@ describe('Unit', function () {
         expect(new Commons.NetworkException('dummy').message).to.eq('dummy')
         expect(new Commons.TimeoutException('dummy').message).to.eq('dummy')
       })
+
+      describe('.InvalidConfigurationException', function () {
+        it('supplies default message', function () {
+          // because 100% coverage that's why
+          var exception = new Commons.InvalidConfigurationException()
+          expect(exception.message).to.be.a('string')
+        })
+      })
     })
   })
 })

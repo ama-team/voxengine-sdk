@@ -3,6 +3,7 @@
 
 var Yaml = require('js-yaml')
 var Sinon = require('sinon')
+var Slf4j = require('../../../lib/logger').slf4j.Slf4j
 
 var requests = []
 
@@ -52,4 +53,5 @@ afterEach(function () {
       Yaml.dump(requests[i]), 'application/x-yaml')
   }
   requests = []
+  Slf4j.reset()
 })

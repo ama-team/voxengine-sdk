@@ -5,10 +5,10 @@
 var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
-var rest = require('../../../../lib/http/rest')
-var Rest = rest.Client
-var Commons = require('../../../../lib/http/_common')
-var Method = Commons.Method
+var SDK = require('../../../../lib')
+var Http = SDK.Http
+var Rest = Http.Rest
+var Method = Http.Method
 var Loggers = require('../../../../lib/logger')
 
 Chai.use(require('chai-as-promised'))
@@ -25,13 +25,7 @@ describe('Integration', function () {
   describe('/http', function () {
     describe('/rest.js', function () {
       var serializer
-
-      beforeEach(function () {
-        serializer = {
-          serialize: Sinon.spy(through),
-          deserialize: Sinon.spy(through)
-        }
-      })
+      var client
 
       var clientFactory = function (transport, opts) {
         opts = opts || {methodOverrideHeader: 'X-MOH'}
@@ -40,9 +34,41 @@ describe('Integration', function () {
         return new Rest(opts, transport)
       }
 
-      var client = clientFactory(transportFactory({code: 200}))
+      beforeEach(function () {
+        serializer = {
+          serialize: Sinon.spy(through),
+          deserialize: Sinon.spy(through)
+        }
+        client = clientFactory(transportFactory({code: 200}))
+      })
 
       describe('.Client', function () {
+        describe('< new', function () {
+          it('understands transport-only construction', function () {
+            var transport = transportFactory({code: 200})
+            var client = new Rest(transport)
+            var resource = '/'
+            return client
+              .request(Method.Get, resource)
+              .then(function () {
+                expect(transport.callCount).to.eq(1)
+                expect(transport.getCall(0).args[0]).to.eq(resource)
+              })
+          })
+
+          it('tolerates invalid settings construction', function () {
+            var transport = transportFactory({code: 200})
+            var client = new Rest(false, transport)
+            var resource = '/'
+            return client
+              .request(Method.Get, resource)
+              .then(function () {
+                expect(transport.callCount).to.eq(1)
+                expect(transport.getCall(0).args[0]).to.eq(resource)
+              })
+          })
+        })
+
         describe('#execute', function () {
           it('converts resource into url', function () {
             var basic = basicFactory({code: 200})
@@ -76,8 +102,8 @@ describe('Integration', function () {
         describe('#request', function () {
           it('serializes provided payload', function () {
             var data = {x: 12}
-            client
-              .request(Method.Get)
+            return client
+              .request(Method.Post, '/', data)
               .then(function () {
                 expect(serializer.serialize.callCount).to.eq(1)
                 expect(serializer.serialize.getCall(0).args[0]).to.eq(data)
@@ -89,7 +115,7 @@ describe('Integration', function () {
             var basic = basicFactory({code: 200, payload: data})
             var client = clientFactory(null, {client: basic})
             return client
-              .request(Method.Get)
+              .request(Method.Get, '/')
               .then(function () {
                 expect(serializer.deserialize.callCount).to.eq(1)
                 expect(serializer.deserialize.getCall(0).args[0]).to.eq(data)
@@ -98,19 +124,19 @@ describe('Integration', function () {
 
           it('throws client error on 4xx by default', function () {
             var client = clientFactory(transportFactory({code: 400}))
-            client
+            return client
               .request(Method.Get, '/')
               .then(branchStopper, function (e) {
-                expect(e).to.be.instanceOf(Commons.ClientErrorException)
+                expect(e).to.be.instanceOf(Http.ClientErrorException)
               })
           })
 
           it('throws server error on 5xx by default', function () {
             var client = clientFactory(transportFactory({code: 500}))
-            client
+            return client
               .request(Method.Get, '/')
               .then(branchStopper, function (e) {
-                expect(e).to.be.instanceOf(Commons.ServerErrorException)
+                expect(e).to.be.instanceOf(Http.ServerErrorException)
               })
           })
 
@@ -122,7 +148,7 @@ describe('Integration', function () {
             var headers = {alpha: [1, 2]}
 
             return client
-              .request(Commons.Method.Post, '/entity', payload, query, headers)
+              .request(Method.Post, '/entity', payload, query, headers)
               .then(function () {
                 expect(basic.execute.callCount).to.eq(1)
                 var request = basic.execute.getCall(0).args[0]
@@ -198,7 +224,7 @@ describe('Integration', function () {
           describe('#' + method, function () {
             it('throws NotFoundException on 404 response', function () {
               var client = clientFactory(transportFactory({code: 404}))
-              var ExceptionClass = Commons.NotFoundException
+              var ExceptionClass = Http.NotFoundException
               var call = client[method]('/entity')
 
               return expect(call).to.eventually.be.rejectedWith(ExceptionClass)
@@ -206,7 +232,7 @@ describe('Integration', function () {
 
             it('throws ClientErrorException on 4xx responses', function () {
               var client = clientFactory(transportFactory({code: 400}))
-              var ExceptionClass = Commons.ClientErrorException
+              var ExceptionClass = Http.ClientErrorException
               var call = client[method]('/entity')
 
               return expect(call).to.eventually.be.rejectedWith(ExceptionClass)
@@ -214,7 +240,7 @@ describe('Integration', function () {
 
             it('throws ServerErrorException on 5xx responses', function () {
               var client = clientFactory(transportFactory({code: 500}))
-              var ExceptionClass = Commons.ServerErrorException
+              var ExceptionClass = Http.ServerErrorException
               var call = client[method]('/entity')
 
               return expect(call).to.eventually.be.rejectedWith(ExceptionClass)

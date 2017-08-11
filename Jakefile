@@ -31,7 +31,12 @@ var exec = function (command, options) {
   return execute(command, options).then(complete, fail)
 }
 
-var chain = function (tasks, ignoreErrors) {
+var termination = function (error, value) {
+  error ? fail(error) : complete(value)
+}
+
+var chain = function (tasks, callback, ignoreErrors) {
+  callback = callback || termination
   tasks = tasks.map(function (task) {
     if (typeof task === 'string' || task instanceof String) {
       return jake.Task[task]
@@ -44,13 +49,15 @@ var chain = function (tasks, ignoreErrors) {
         task.invoke(value)
       })
       carrier.addListener('fail', function (error) {
-        ignoreErrors ? task.invoke(error) : fail(error)
+        ignoreErrors ? task.invoke(error) : callback(error)
       })
     }
     return task;
   }, null)
-  last.addListener('complete', complete)
-  last.addListener('fail', fail)
+  last.addListener('complete', function (value) {
+    callback(null, value)
+  })
+  last.addListener('fail', callback)
   tasks[0].invoke()
 }
 
@@ -126,7 +133,7 @@ namespace('test', function () {
   })
 
   task('with-report', {async: true}, function () {
-    chain(['test:coverage', 'test:report'], true)
+    chain(['test:coverage', 'test:report'], termination, true)
   })
 
   suites.forEach(function (suite) {
@@ -176,7 +183,7 @@ namespace('test', function () {
       })
 
       task('with-report', {async: true}, function () {
-        chain(['test:' + suite + ':coverage', 'test:report'], true)
+        chain(['test:' + suite + ':coverage', 'test:report'], termination, true)
       })
     })
   })
