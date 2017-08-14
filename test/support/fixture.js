@@ -18,9 +18,9 @@ function Fixture (method, definition) {
         (function (suite, j) {
           var replacements = {index: j}
           var statement = suite.name || 'complies to assertion {index}'
-          for (var key in replacements) {
+          Object.keys(replacements).forEach(function (key) {
             statement = statement.replace('{' + key + '}', replacements[key])
-          }
+          })
           var test = suite.tests[j]
           it(statement, function () {
             var input = test.input
