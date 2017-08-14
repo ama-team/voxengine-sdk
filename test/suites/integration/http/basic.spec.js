@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
-/* global transportFactory */
+/* global transportFactory, Net */
 
 var Sinon = require('sinon')
 var Chai = require('chai')

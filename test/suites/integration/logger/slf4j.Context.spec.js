@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
-/* global allure */
+/* global allure, Logger */
 
 var sinon = require('sinon')
 var Chai = require('chai')
