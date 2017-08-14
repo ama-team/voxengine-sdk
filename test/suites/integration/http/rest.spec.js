@@ -10,6 +10,7 @@ var Http = SDK.Http
 var Rest = Http.Rest
 var Method = Http.Method
 var Loggers = require('../../../../lib/logger')
+var TimeoutException = SDK.Concurrent.TimeoutException
 
 Chai.use(require('chai-as-promised'))
 
@@ -156,6 +157,26 @@ describe('Integration', function () {
                 expect(request.headers).to.deep.eq(headers)
                 expect(request.payload).to.deep.eq(payload)
               })
+          })
+
+          it('uses settings timeout', function () {
+            // TODO: use fake clock
+            var transport = function () {
+              return new Promise(function () {})
+            }
+            var client = clientFactory(transport, {timeout: 0})
+            var request = client.get('/')
+            return expect(request).to.eventually.be.rejectedWith(TimeoutException)
+          })
+
+          it('uses per-request timeout', function () {
+            // TODO: use fake clock
+            var transport = function () {
+              return new Promise(function () {})
+            }
+            var client = clientFactory(transport)
+            var request = client.get('/', {}, {}, 0)
+            return expect(request).to.eventually.be.rejectedWith(TimeoutException)
           })
         })
 

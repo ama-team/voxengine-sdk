@@ -110,13 +110,13 @@ var call = client
 
 Basic client provides you with following methods:
 
-- `get(url, [query, headers])`
-- `head(url, [query, headers])`
-- `post(url, [payload, headers])`
-- `put(url, [payload, headers])`
-- `patch(url, [payload, headers])`
-- `delete(url, [payload, headers])`
-- `request(method, url, [query, payload, headers])`
+- `get(url, [query, headers, timeout])`
+- `head(url, [query, headers, timeout])`
+- `post(url, [payload, headers, timeout])`
+- `put(url, [payload, headers, timeout])`
+- `patch(url, [payload, headers, timeout])`
+- `delete(url, [payload, headers, timeout])`
+- `request(method, url, [query, payload, headers, timeout])`
 
 with following rules:
 
@@ -161,6 +161,8 @@ var settings = {
     headers: {},
     // maximum amount of request retries
     retries: 4,
+    // default timeout in milliseconds
+    timeout: 1000,
     // alternative logger options
     logger: {
       level: SDK.Logger.Level.Info,
@@ -191,6 +193,15 @@ in promise, treating 404 as false and any 2xx as true
 trigger `http.NotFoundException`
 - There are fallback methods `.request()` and `.execute()` in case you have 
 some logic depending on response codes.
+
+The signatures are:
+
+- `get(resource, [query, headers, timeout])`
+- `exists(resource, [query, headers, timeout])`
+- `create(resource, [payload, headers, query, timeout])`
+- `set(resource, [payload, headers, query, timeout]) : PUT`
+- `modify(resource, [payload, headers, query, timeout]) : PATCH`
+- `delete(resource, [payload, headers, query, timeout])`
  
 So you may talk to your backend like that:
  
@@ -223,6 +234,8 @@ var options = {
   headers: {
     'Content-Type': 'application/json'
   },
+  // default timeout
+  timeout: 1000,
   // same logger options
   logger: {}
 }
@@ -362,9 +375,14 @@ feelings for semicolons.
 ## Testing
 
 This package is using Mocha with Chai for test running, Istanbul for 
-recording coverage metrics and Allure framework for reporting. If you 
-want full-blown feedback, use `npx jake test:with-report` to generate 
-Allure report (don't forget to install 
+recording coverage metrics and Allure framework for reporting. To run
+tests, simply invoke jake:
+
+```bash
+npx jake test
+```
+If you  want full-blown feedback, use `npx jake test:with-report` to 
+generate Allure report (don't forget to install 
 [allure-commandline][allure-commandline] before) and coverage report,
 which will be placed in `tmp/report` directory.
 
