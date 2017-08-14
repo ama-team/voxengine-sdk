@@ -58,8 +58,7 @@
     "npm-cli-login": "0.0.10",
     "npm-utils": "^1.11.0",
     "promise": "^7.1.1",
-    "sinon": "^1.17.6",
-    "sinon-as-promised": "^4.0.2",
+    "sinon": "^3.2.0",
     "standard": "^9.0.0",
     "uglify-js": "^3.0.27"
   },
