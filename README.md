@@ -363,10 +363,10 @@ feelings for semicolons.
 
 This package is using Mocha with Chai for test running, Istanbul for 
 recording coverage metrics and Allure framework for reporting. If you 
-want full-blown feedback, use `npm run test:report` to generate Allure 
-report (don't forget to install 
-[allure-commandline][allure-commandline] before), it will be placed in 
-`build/report/allure` directory.
+want full-blown feedback, use `npx jake test:with-report` to generate 
+Allure report (don't forget to install 
+[allure-commandline][allure-commandline] before) and coverage report,
+which will be placed in `tmp/report` directory.
 
 ## Anything else?
 
