@@ -191,6 +191,10 @@ describe('Integration', function () {
                 expect(paused).to.be.true
               })
           })
+
+          it('correctly executes if there is no current task', function () {
+            return TaskQueue.started().pause()
+          })
         })
 
         describe('#close', function () {
@@ -372,6 +376,16 @@ describe('Integration', function () {
               .then(function () {
                 expect(result).to.deep.eq(expectation)
               })
+          })
+
+          it('tolerates non-error rejection', function () {
+            var value = {}
+            var rejected = Promise.reject(value)
+            var queue = TaskQueue.started()
+            var task = queue.push(function () {
+              return rejected
+            })
+            return expect(task).to.eventually.be.rejectedWith(value)
           })
         })
       })
