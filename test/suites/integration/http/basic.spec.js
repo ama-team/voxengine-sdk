@@ -10,6 +10,7 @@ var Clients = SDK.Http
 var Method = Clients.Method
 var Client = Clients.Basic
 var Loggers = SDK.Logger
+var TimeoutException = SDK.Concurrent.TimeoutException
 
 Chai.use(require('chai-as-promised'))
 Chai.use(require('chai-string'))
@@ -325,6 +326,26 @@ describe('Integration', function () {
                 expect(error).to.be.instanceOf(Clients.NetworkException)
                 expect(error.code).to.eq(-1)
               })
+          })
+
+          it('uses settings timeout', function () {
+            // TODO: use fake clock
+            var transport = function () {
+              return new Promise(function () {})
+            }
+            var client = clientFactory(transport, {timeout: 0})
+            var request = client.get('/')
+            return expect(request).to.eventually.be.rejectedWith(TimeoutException)
+          })
+
+          it('uses per-request timeout', function () {
+            // TODO: use fake clock
+            var transport = function () {
+              return new Promise(function () {})
+            }
+            var client = clientFactory(transport)
+            var request = client.get('/', {}, {}, 0)
+            return expect(request).to.eventually.be.rejectedWith(TimeoutException)
           })
         })
 
