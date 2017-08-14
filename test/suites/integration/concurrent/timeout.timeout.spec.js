@@ -3,6 +3,7 @@
 var Concurrent = require('../../../../lib').Concurrent
 var timeout = Concurrent.timeout
 var TimeoutException = Concurrent.TimeoutException
+var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
 
@@ -16,6 +17,16 @@ describe('Integration', function () {
   describe('/concurrent', function () {
     describe('/timeout.js', function () {
       describe('.timeout', function () {
+        var clock
+
+        beforeEach(function () {
+          clock = Sinon.useFakeTimers()
+        })
+
+        afterEach(function () {
+          clock.restore()
+        })
+
         it('returns promise if timeout is negative', function () {
           var promise = new Promise(function () {})
           return expect(timeout(promise, -1)).to.equal(promise)
@@ -34,6 +45,7 @@ describe('Integration', function () {
         it('wraps promise in timed out one', function () {
           var promise = new Promise(function () {})
           var wrapped = timeout(promise, 0)
+          clock.next()
           return expect(wrapped).to.eventually.be.rejectedWith(TimeoutException)
         })
 
@@ -41,6 +53,7 @@ describe('Integration', function () {
           var message = 'foo'
           var promise = new Promise(function () {})
           var wrapped = timeout(promise, 0, message)
+          clock.next()
           return wrapped
             .then(branchStopper, function (error) {
               expect(error).to.be.instanceOf(TimeoutException)
@@ -55,6 +68,7 @@ describe('Integration', function () {
             .then(function () {
               return timeout(promise, 0)
             })
+          clock.next()
           return expect(wrapped).to.eventually.eq(value)
         })
       })
