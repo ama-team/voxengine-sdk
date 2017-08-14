@@ -21,6 +21,16 @@ describe('Integration', function () {
           return expect(timeout(promise, -1)).to.equal(promise)
         })
 
+        it('returns promise if timeout is omitted', function () {
+          var promise = new Promise(function () {})
+          return expect(timeout(promise)).to.equal(promise)
+        })
+
+        it('returns promise if not-a-number is supplied', function () {
+          var promise = new Promise(function () {})
+          return expect(timeout(promise, false)).to.equal(promise)
+        })
+
         it('wraps promise in timed out one', function () {
           var promise = new Promise(function () {})
           var wrapped = timeout(promise, 0)
