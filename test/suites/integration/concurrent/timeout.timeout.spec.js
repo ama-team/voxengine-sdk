@@ -3,6 +3,7 @@
 var Concurrent = require('../../../../lib').Concurrent
 var timeout = Concurrent.timeout
 var TimeoutException = Concurrent.TimeoutException
+var CancellationException = Concurrent.CancellationException
 var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
@@ -70,6 +71,33 @@ describe('Integration', function () {
             })
           clock.next()
           return expect(wrapped).to.eventually.eq(value)
+        })
+
+        it('provides noop #cancel() method on passed through promise', function () {
+          var promise = Promise.resolve(12)
+          var wrapped = timeout(promise, -1)
+          expect(wrapped).to.have.property('cancel').instanceOf(Function)
+          expect(wrapped.cancel).not.to.throw()
+        })
+
+        it('provides #cancel(false) method that allows to explicitly stop processing', function () {
+          var promise = new Promise(function (resolve) {
+            setTimeout(resolve, 10)
+          })
+          var wrapped = timeout(promise, 1)
+          wrapped.cancel(false)
+          clock.tick(15)
+          return expect(wrapped).to.eventually.be.rejectedWith(CancellationException)
+        })
+
+        it('provides #cancel(true) method that allows to implicitly stop processing', function () {
+          var promise = new Promise(function (resolve) {
+            setTimeout(resolve, 10)
+          })
+          var wrapped = timeout(promise, 1)
+          wrapped.cancel(true)
+          clock.tick(15)
+          return wrapped
         })
       })
     })

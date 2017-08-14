@@ -3,7 +3,9 @@
 var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
-var throttle = require('../../../../lib').Concurrent.throttle
+var Concurrent = require('../../../../lib').Concurrent
+var throttle = Concurrent.throttle
+var CancellationException = Concurrent.CancellationException
 
 describe('Integration', function () {
   describe('/concurrent', function () {
@@ -43,6 +45,21 @@ describe('Integration', function () {
             .then(function () {
               expect(stub.callCount).to.eq(1)
             })
+        })
+
+        it('provides #cancel(false) method for explicit cancellation', function () {
+          var promise = Promise.resolve()
+          var throttled = throttle(promise, 10)
+          throttled.cancel(false)
+          return expect(throttled).to.eventually.rejectedWith(CancellationException)
+        })
+
+        it('provides #cancel(true) method for implicit cancellation', function () {
+          var value = {x: 12}
+          var promise = Promise.resolve(value)
+          var throttled = throttle(promise, 10)
+          throttled.cancel(true)
+          return expect(throttled).to.eventually.equal(value)
         })
       })
     })

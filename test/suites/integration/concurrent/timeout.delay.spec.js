@@ -3,7 +3,9 @@
 var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
-var delay = require('../../../../lib').Concurrent.delay
+var Concurrent = require('../../../../lib').Concurrent
+var delay = Concurrent.delay
+var CancellationException = Concurrent.CancellationException
 
 describe('Integration', function () {
   describe('/concurrent', function () {
@@ -33,6 +35,18 @@ describe('Integration', function () {
         it('creates delayed promise if no callback is specified', function () {
           var promise = delay(1)
           clock.next()
+          return promise
+        })
+
+        it('provides #cancel(false) method for explicit cancellation', function () {
+          var promise = delay(1)
+          promise.cancel(false)
+          return expect(promise).to.eventually.be.rejectedWith(CancellationException)
+        })
+
+        it('provides #cancel(true) method for implicit cancellation', function () {
+          var promise = delay(1)
+          promise.cancel(true)
           return promise
         })
       })
