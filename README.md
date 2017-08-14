@@ -74,7 +74,7 @@ logger.setLevel('warn')
 logger.setWriter(Logger)
 ```
 
-This functionality is also export via `Slf4j` static methods:
+This functionality is also exported via `Slf4j` static methods:
 
 ```js
 Slf4j.setLevel('logger.name', 'info')
@@ -121,9 +121,10 @@ Basic client provides you with following methods:
 with following rules:
 
 - Query is an object where every key is associated with a
-string value or array of string values.
+string value or array of string values:
+`{page: '1', filters: ['active', 'fresh']}`.
 - The same applies to headers object.
-- Payload is strictly a string or falsey value.
+- Payload may be either a string or falsey value.
 - URL is built by simple concatenation of `options.url` and `url` 
 method argument, so it would be 
 `http://my.backend.com/magic-phone-number.txt` in the example. In case 
@@ -244,22 +245,24 @@ race.reject('will be ignored')
 
 ## timeout
 
-`timeout` function allows you to wrap promise with anither one which 
-will auto-reject after specified time:
+`timeout` function allows you to wrap promise with another one which 
+will auto-reject after specified time. Most of the time you won't need 
+this, because VoxEngine automatically times out long dials and 
+requests, but sometimes you will need more strict time bounds or set
+a timeout on non-standard resource:
 
 ```js
-var call = VoxEngine.callPSTN('112')
-var connection = new Promise(function (resolve, reject) {
-  call.addEventListener(CallEvents.Connected, resolve)
-  call.addEventListener(CallEvents.Failed, reject)
-})
-var incrediblyFastResponse = SDK.Concurrent.timeout(connection, 10000)
+var perfectMatch = api.getPerfectMatch(call)
+SDK.Concurrent.timeout(perfectMatch, 10000)
+  .then(null, function (error) {
+    logger.info('It looks like api can\'t find match quickly: ', error)
+    logger.info('Falling back to standard match')
+    return api.getStandardMatch(call)
+  })
 ```
 
-Usually VoxImplant will handle call timeouts for you, but sometimes you
-will need to deal with your own promises in that way. Please also note 
-that `timeout` function accepts only numbers >= 0 as timeout and simply
-passes promise through if it receives anything else.
+The `TimeoutException` used to reject such promise can be located as
+`SDK.Concurrent.TimeoutException`
 
 ## delay
 
@@ -267,15 +270,27 @@ passes promise through if it receives anything else.
 just create a timer promise if callback is omitted:
 
 ```js
-logger.info('This user has configured 10-second timeout for voice message')
-delay(10000, function () {
-  call.say('something')
+SDK.Concurrent.delay(10000, function () {
+  call.say('Your answering time has expired')
 })
 ```
 
 ```js
-delay(10000).then(function () {
-  call.say('something')
+SDK.Concurrent.delay(10000).then(function () {
+  call.say('Your answering time has expired')
+})
+```
+
+You can use it with `Promise.race()` to create some basic time-bounded
+scenarios without explicit rejection:
+
+```js
+var toneDetection = new Promise(function (resolve) {
+  call.addEventListener(CallEvents.ToneDetected, resolve)
+})
+var timeBound = SDK.Concurrent.delay(10000)
+Promise.race(toneDetection, timeBound).then(function() {
+  call.say('I\'m sorry, Dave. I\'m afraid i can\'t do that.')
 })
 ```
 
@@ -286,8 +301,9 @@ wraps promise as well and ensures that it will resolve not earlier than
 specified timeout allows:
 
 ```js
-logger.info('Emulating hard work')
-var balance = throttle(rest.get('/users/' + id + '/balance'), 10000)
+logger.info('Emulating hard work so our clients would think we\'re smart')
+var balance = rest.get('/users/' + id + '/balance')
+var throttled = SDK.Concurrent.throttle(balance, 10000)
 ```
 
 ## TaskQueue
@@ -300,14 +316,16 @@ to come in order:
 ```js
 var queue = SDK.Concurrent.TaskQueue.started({name: 'Call ' + id + ' event stream'})
 queue.push(function () {
-  rest.create('/calls/' + id, {number: number})
+  return rest.create('/calls/' + id, {number: number})
 })
 queue.push(function() {
-  rest.modify('/users/' + userId + '/balance', {amount: -33.3})
+  return rest.modify('/users/' + userId + '/balance', {amount: -33.3})
 }, {name: 'User balance withdrawal', timeout: 1000})
-queue.close().then(function() {
-  logger.info('Everything has been finished!')
-})
+queue
+  .close()
+  .then(function() {
+    logger.info('Everything has been finished!')
+  })
 ```
 
 Queue exposes `#start()` and `#pause()` methods to start and pause
@@ -326,9 +344,10 @@ you can always bundle things down with a build tool of your choice.
 I personally use Webpack, but was recommended of Browserify as well,
 and, of course good old Grunt and Gulp should work too.
 
-Don't forget that VoxImplant has scenario size limit of 128 kb, so 
-don't require anything at sight, don't forget to minify things
-you require and don't forget to strip comments off.
+Don't forget that VoxImplant has scenario size limit of 
+[256 kb][voxengine-ref], so don't require anything at sight, don't 
+forget to minify things you require and don't forget to strip 
+comments off.
 
 ## ES5 & standards
 
@@ -368,9 +387,10 @@ that could be devoted to this project.
 [![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=dev)
 [![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/dev.svg?style=flat-square)](scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/dev)
 
-  [allure-commandline]: http://wiki.qatools.ru/display/AL/Allure+Commandline
+  [allure-commandline]: https://github.com/allure-framework/allure2
   [@definitions]: https://github.com/ama-team/voxengine-definitions
   [@scenario-framework]: https://github.com/ama-team/voxengine-scenario-framework
   [@publisher]: https://github.com/ama-team/voximplant-publisher
   [slf4j]: https://www.slf4j.org/
   [standardjs]: https://standardjs.com
+  [voxengine-ref]: https://voximplant.com/docs/references/appengine/
