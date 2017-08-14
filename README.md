@@ -1,11 +1,19 @@
 # (Unofficial) VoxEngine SDK
 
-This repository contains simple SDK to ease development of VoxImplant 
-scenarios.
+[![npm version](https://img.shields.io/npm/v/@ama-team/voxengine-sdk.svg?style=flat-square)](https://www.npmjs.com/package/@ama-team/voxengine-sdk) 
+[![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
+[![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=master)
+[![Code Climate](https://img.shields.io/codeclimate/github/ama-team/voxengine-sdk.svg?style=flat-square)](https://codeclimate.com/github/ama-team/voxengine-sdk)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/master.svg?style=flat-square)](scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/master)
 
-Currently it consists of promise-based HTTP client (a little bit more 
-advanced than raw `Net.httpRequestAsync`), REST client, which is a 
-simple sugar wrapper for HTTP client, and SLF4J-alike logger.
+This repository contains simple SDK to ease development of VoxImplant 
+scenarios. It has:
+
+- Promise-based HTTP client
+- Promise-based REST client
+- [SLF4J][]-alike logger
+- Some concurrent primitives that may be required during development
+(timeout, delay, task queue, completable promise)
 
 It may be installed via classic npm call
 
@@ -16,38 +24,37 @@ npm i @ama-team/voxengine-sdk --save
 And required as any other package:
 
 ```js
-var sdk = require('@ama-team/voxengine-sdk');
+var SDK = require('@ama-team/voxengine-sdk')
 ```
 
 ## SLF4J-alike Logger
 
 This library wraps standard `Logger` and adds support for logger names,
-log levels (that shouldn't be very useful, but who knows) and log 
-message parameters (substitutions):
+log levels and log message parameters (substitutions):
 
 ```js
-var logger = sdk.logger.slf4j.Slf4j.create('logger.name');
+var Slf4j = SDK.Logger.Slf4j
+var logger = Slf4j.create('logger.name')
 
 // ...
 
-var user = 'Pavel',
-    elapsed = 12.345,
-    metadata = {roles: ['lead'], extras: []};
+var user = 'Pavel'
+var elapsed = 12.345
+var metadata = {roles: ['lead'], extras: []}
     
 call.addEventListener(CallEvents.Connected, function () {
-    logger.info('{} has responded in {} seconds (meta: {})', user, elapsed, metadata);
-    // [INFO] logger.name: Pavel has responded in 12.345 seconds (meta: {"roles": ["lead"], "extras": []})
+  logger.info('{} has responded in {} seconds (meta: {})', user, elapsed, metadata)
+  // [INFO] logger.name: Pavel has responded in 12.345 seconds (meta: {"roles": ["lead"], "extras": []})
 });
 ```
 
-This logger provides `.trace()`, `.debug()`, `.notice()`, `.info()`, 
-`.warn()`, `.error()` and `.log(logger.Level.*, pattern, substitutions...)` 
+This logger provides `.trace()`, `.debug()`, `.info()`, `.notice()`, 
+`.warn()`, `.error()` and `.log(Logger.Level.*, pattern, substitutions...)` 
 methods to print things. Also there are `.attach(key, value)`, 
 `.detach(key)`, `.attachAll(object)` and `.detachAll()` methods for
 functionality known as Mapped Diagnostic Context in Logback:
 
 ```js
-var logger = sdk.logger.slf4j.Slf4j.create('logger.name')
 logger.attach('id', '123')
 logger.info('Sending custom event')
 // [INFO] logger.name [id=123]: Sending custom event 
@@ -56,59 +63,49 @@ logger.info('Sending custom event')
 This may help you if you have similar logging output but need to 
 distinguish components one from another.
 
-Whenever you need to turn off particular logger or increase verbosity
-in other, you may use `Slf4j` static methods to configure previously-created
-loggers:
-
-- `Slf4j.setThreshold([name], logger.Level)` - sets threshold for 
-logger with name, if name is omitted, global default threshold is set.
-- `Slf4j.setWriter([name], Logger || Writable)` - same thing for writer.
-
-### Internals
-
-Every logger is created in `Context` that defines which logger should
-receive which threshold and writer. `Slf4j.create()` is basically a 
-wrapper for `slf4j~DefaultContext.create()`, and that very context is
-passed to the logger at creation, so on every call it queries context
-for current configuration.
-
-`Slf4j` class is fully compatible (has all the types / quacks like a)
-with `slf4j.Context` instance, so if you need to substitute default 
-context for any reason, you can do that with ease:
+Every logger may be created with particular level and writer, as
+well as swap them in runtime:
 
 ```js
-function Component(loggerContext) {
-  loggerContext = loggerContext || sdk.slf4j.Slf4j;
-  var logger = loggerContext.create('my.super.component')
-  this.shout = function() {
-  logger.info('I may be using standalone context! Or not.')
-  }
-}
-
-var localContext = new sdk.logger.slf4j.Context()
-localContext.setWriter(new TestReportWriter())
-var component = new Component(localContext)
-component.shout()
+// please note that Logger symbol (last parameter) comes from VoxEngine, not from SDK
+var logger = Slf4j.create('logger.name', SDK.Logger.Level.Info, Logger)
+logger.setLevel(SDK.Logger.Level.Info)
+logger.setLevel('warn')
+logger.setWriter(Logger)
 ```
+
+This functionality is also exported via `Slf4j` static methods:
+
+```js
+Slf4j.setLevel('logger.name', 'info')
+Slf4j.setWriter('logger.name', Logger)
+```
+
+so you can control loggers buried deep in other components.
+
+Logger level and writer are looked up hierarchically: if no 
+level / writer is found for current name, search continues for parent 
+one. Names are separated using dots, so `logger.name` will use 
+`logger.name`, `logger`, `(root)` lookup chain.
 
 ## Basic HTTP Client
 
 This client is a simple wrapper around `Net.httpRequestAsync` primitive
 
 ```js
-var sdk = require('@ama-team/voxengine-sdk'),
-    options = {
-        url: 'http://my.backend.com',
-        retries: 9,
-        throwOnServerError: true
-    },
-    client = new sdk.http.basic.Client(options);
+var SDK = require('@ama-team/voxengine-sdk')
+var options = {
+  url: 'http://my.backend.com',
+  retries: 9,
+  throwOnServerError: true
+}
+var client = new SDK.Http.Basic(options);
 
 var call = client
-    .get('/magic-phone-number.txt')
-    .then(function(response) {
-        return VoxEngine.callPSTN(response.payload);
-    });
+  .get('/magic-phone-number.txt')
+  .then(function(response) {
+    return VoxEngine.callPSTN(response.payload);
+  });
 ```
 
 Basic client provides you with following methods:
@@ -124,19 +121,20 @@ Basic client provides you with following methods:
 with following rules:
 
 - Query is an object where every key is associated with a
-string value or array of string values.
+string value or array of string values:
+`{page: '1', filters: ['active', 'fresh']}`.
 - The same applies to headers object.
-- Payload may be a string only.
+- Payload may be either a string or falsey value.
 - URL is built by simple concatenation of `options.url` and `url` 
 method argument, so it would be 
 `http://my.backend.com/magic-phone-number.txt` in the example. In case 
 you need to use same client to talk to different hosts, just don't 
 specify url in options - it would be set to empty string.
-- Method is a string and can be set using `sdk.http.Method` enum.
+- Method is a string and can be set using `SDK.Http.Method` enum.
 
 Every method returns a promise that either resolves with response or
-rejects with `sdk.http.NetworkException`, `sdk.http.HttpException`, one 
-of their children or `sdk.http.InvalidConfigurationException`. 
+rejects with `SDK.Http.NetworkException`, `SDK.Http.HttpException`, one 
+of their children or `SDK.Http.InvalidConfigurationException`. 
 In case of reject, received exception should have `.name`, `.message`, 
 `.code`, `.request` and sometimes `.response` fields (except for 
 `InvalidConfigurationException`). 
@@ -163,8 +161,12 @@ var settings = {
     headers: {},
     // maximum amount of request retries
     retries: 4,
-    // alternative logger factory to set another writer/debug level
-    loggerFactory: new sdk.logger.slf4j.Factory(sdk.logger.Level.Error)
+    // alternative logger options
+    logger: {
+      level: SDK.Logger.Level.Info,
+      name: 'custom-name',
+      instance: new MyCustomLogger()
+    }
 };
 ```
 
@@ -193,39 +195,145 @@ some logic depending on response codes.
 So you may talk to your backend like that:
  
 ```js
-var rest = new sdk.http.rest.Client(),
-    user = rest
-        .get('/user', {phone: number, size: 1})
-        .then(function (response) {
-            return response ? response.content[0] : rest.create('/user', {phone: number});
-        });
+var rest = new SDK.Http.Rest()
+var user = rest
+  .get('/user', {phone: number, size: 1})
+  .then(function (response) {
+    return response ? response.content[0] : rest.create('/user', {phone: number});
+  });
 ```
 
 REST client is configured very similarly to HTTP client:
 
 ```js
 var options = {
-        // this will be prepended to all routes you pass into client
-        url: 'http://backend/api/v1',
-        // you will certainly need to set this if you're going to use anything but .get/.create
-        methodOverrideHeader: 'X-HTTP-Method-Override',
-        // that's pretty much the default
-        retries: 4,
-        // in case you want to override default logger
-        loggerFactory: new sdk.logger.slf4j.Factory(sdk.logger.Level.Error),
-        // this is set by default as well
-        serializer: {
-            serialize: JSON.stringify,
-            deserialize: JSON.parse
-        },
-        // again, a set of headers that will always be present in 
-        // requests (unless overriden in particular request)
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    },
-    client = new sdk.http.rest.Client(options);
+  // this will be prepended to all routes you pass into client
+  url: 'http://backend/api/v1',
+  // you will certainly need to set this if you're going to use anything but .get/.create
+  methodOverrideHeader: 'X-HTTP-Method-Override',
+  // that's pretty much the default
+  retries: 4,
+  // this is set by default as well
+  serializer: {
+    serialize: JSON.stringify,
+    deserialize: JSON.parse
+  },
+  // again, a set of headers that will always be present in 
+  // requests (unless overriden in particular request)
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  // same logger options
+  logger: {}
+}
+var client = new SDK.Http.Rest(options);
 ```
+
+## Future
+
+This SDK also provides an externally-completable promise called Future
+for brevity. It has the same interface as standard promise, but also
+exposes `#resolve()` and `#reject()` instance methods:
+
+```js
+var Future = SDK.Concurrent.Future
+
+var race = Future.race([new Future(), new Future()])
+race.resolve('hijack')
+race.reject('will be ignored')
+```
+
+## timeout
+
+`timeout` function allows you to wrap promise with another one which 
+will auto-reject after specified time. Most of the time you won't need 
+this, because VoxEngine automatically times out long dials and 
+requests, but sometimes you will need more strict time bounds or set
+a timeout on non-standard resource:
+
+```js
+var perfectMatch = api.getPerfectMatch(call)
+SDK.Concurrent.timeout(perfectMatch, 10000)
+  .then(null, function (error) {
+    logger.info('It looks like api can\'t find match quickly: ', error)
+    logger.info('Falling back to standard match')
+    return api.getStandardMatch(call)
+  })
+```
+
+The `TimeoutException` used to reject such promise can be located as
+`SDK.Concurrent.TimeoutException`
+
+## delay
+
+`delay` function will wrap your callback and invoke it in future, or
+just create a timer promise if callback is omitted:
+
+```js
+SDK.Concurrent.delay(10000, function () {
+  call.say('Your answering time has expired')
+})
+```
+
+```js
+SDK.Concurrent.delay(10000).then(function () {
+  call.say('Your answering time has expired')
+})
+```
+
+You can use it with `Promise.race()` to create some basic time-bounded
+scenarios without explicit rejection:
+
+```js
+var toneDetection = new Promise(function (resolve) {
+  call.addEventListener(CallEvents.ToneDetected, resolve)
+})
+var timeBound = SDK.Concurrent.delay(10000)
+Promise.race(toneDetection, timeBound).then(function() {
+  call.say('I\'m sorry, Dave. I\'m afraid i can\'t do that.')
+})
+```
+
+## throttle
+
+The last helper function prevents promise from resolving too fast. It
+wraps promise as well and ensures that it will resolve not earlier than
+specified timeout allows:
+
+```js
+logger.info('Emulating hard work so our clients would think we\'re smart')
+var balance = rest.get('/users/' + id + '/balance')
+var throttled = SDK.Concurrent.throttle(balance, 10000)
+```
+
+## TaskQueue
+
+When you're using tons of async code, quite often you need to enforce
+some ordering on processing. TaskQueue is created to run tasks 
+sequentially - for example, it is often necessary for HTTP requests
+to come in order:
+
+```js
+var queue = SDK.Concurrent.TaskQueue.started({name: 'Call ' + id + ' event stream'})
+queue.push(function () {
+  return rest.create('/calls/' + id, {number: number})
+})
+queue.push(function() {
+  return rest.modify('/users/' + userId + '/balance', {amount: -33.3})
+}, {name: 'User balance withdrawal', timeout: 1000})
+queue
+  .close()
+  .then(function() {
+    logger.info('Everything has been finished!')
+  })
+```
+
+Queue exposes `#start()` and `#pause()` methods to start and pause
+processing, `#push()` for adding new tasks, `#close()` and
+`#terminate()` for normal (wait for all tasks) and emergency (discard
+waiting tasks) queue finalization. `#push` will return a promise that
+will be resolved once task has been run, while closing methods will 
+return promise which will resolve once queue will become empty.
 
 ## How do i require this stuff in VoxEngine?
 
@@ -236,55 +344,53 @@ you can always bundle things down with a build tool of your choice.
 I personally use Webpack, but was recommended of Browserify as well,
 and, of course good old Grunt and Gulp should work too.
 
-Don't forget that VoxImplant has scenario size limit of 128 kb, so 
-don't require anything at sight, don't forget to minify things
-you require and don't forget to strip comments off.
+Don't forget that VoxImplant has scenario size limit of 
+[256 kb][voxengine-ref], so don't require anything at sight, don't 
+forget to minify things you require and don't forget to strip 
+comments off.
 
-## ES5
+## ES5 & standards
 
 This repository is developed as ES5 module because it is implied that 
 built code would be injected directly in VoxImplant scenarios, which, in 
 turn, do not support ES6 yet, and transpiling would dramatically harden
 bug hunt.
 
+This repository is developed using [standardjs][], sorry if you have
+feelings for semicolons.
+
 ## Testing
 
 This package is using Mocha with Chai for test running, Istanbul for 
 recording coverage metrics and Allure framework for reporting. If you 
-want full-blown feedback, use `npm run test:report` to generate Allure 
-report (don't forget to install 
-[allure-commandline][allure-commandline] before), it will be placed in 
-`build/report/allure` directory.
+want full-blown feedback, use `npx jake test:with-report` to generate 
+Allure report (don't forget to install 
+[allure-commandline][allure-commandline] before) and coverage report,
+which will be placed in `tmp/report` directory.
 
 ## Anything else?
 
 We have [@ama-team/voxengine-definitions][@definitions] package that 
-helps with autocompletion. Also, 
-[scenario framework][@scenario-framework] and 
-[script publishing tool][@publisher] were being developed at the moment
-these lines were written, so there is probability that there is another 
-useful tool for you.
+helps with autocompletion and [scenario framework][@scenario-framework]
+which aims at more sophisticated approach for VoxImplant scenario
+development. Also there is a chance that 
+[script publishing tool][@publisher] will be finally developed at the 
+moment you're reading this, so it worth to check it.
 
 There is no particular roadmap for this project, so you may use GitHub 
 issues to propose any ideas you got. However, there is not much time
 that could be devoted to this project.
 
-## Self-esteem badge fund
-
-[![npm version](https://img.shields.io/npm/v/@ama-team/voxengine-sdk.svg?style=flat-square)](https://www.npmjs.com/package/@ama-team/voxengine-sdk)
-
-### Master branch / stable
- 
-[![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
-[![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=master)
-[![Code Climate](https://img.shields.io/codeclimate/github/ama-team/voxengine-sdk.svg?style=flat-square)](https://codeclimate.com/github/ama-team/voxengine-sdk)
-
-### Dev branch / incubating
+### Dev branch state / incubating
 
 [![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
 [![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=dev)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/dev.svg?style=flat-square)](scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/dev)
 
-  [allure-commandline]: http://wiki.qatools.ru/display/AL/Allure+Commandline
+  [allure-commandline]: https://github.com/allure-framework/allure2
   [@definitions]: https://github.com/ama-team/voxengine-definitions
   [@scenario-framework]: https://github.com/ama-team/voxengine-scenario-framework
   [@publisher]: https://github.com/ama-team/voximplant-publisher
+  [slf4j]: https://www.slf4j.org/
+  [standardjs]: https://standardjs.com
+  [voxengine-ref]: https://voximplant.com/docs/references/appengine/
