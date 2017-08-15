@@ -1,22 +1,18 @@
 {
   "name": "@ama-team/voxengine-sdk",
   "version": "0.3.0",
-  "description": "Bundle of helpers for VoxEngine scenario scripts",
+  "description": "Bundle of helper functions and classes for VoxEngine scenario scripts",
   "main": "lib/index.js",
   "scripts": {
     "clean": "rm -rf build",
-    "lint": "node_modules/.bin/standard",
-    "minify": "",
-    "test": "node_modules/.bin/_mocha",
-    "test:unit:coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha test/suites/unit/**/*.spec.js",
-    "test:coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha",
-    "test:report:allure": "allure generate --clean -o build/report/allure -- build/data/allure",
-    "test:report:allure:open": "allure report open -o build/report/allure",
-    "test:report": "npm run test:report:allure",
-    "test:with-report": "npm run test; npm run test:report",
-    "test:report:publish:coverage": "cat build/report/coverage/lcov.info | node_modules/.bin/coveralls",
-    "test:report:publish": "npm run test:report:publish:coverage",
-    "doc": "node_modules/.bin/jsdoc -d build/doc -r lib -R README.md"
+    "lint": "standard",
+    "minify": "jake minify",
+    "test": "jake test",
+    "test:coverage": "jake test:coverage",
+    "test:report": "jake test:report",
+    "test:with-report": "jake test:with-report",
+    "test:report:publish": "jake test:report:publish",
+    "doc": "jsdoc -d tmp/doc -r lib -R README.md"
   },
   "repository": {
     "type": "git",
