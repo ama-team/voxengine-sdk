@@ -32,6 +32,14 @@ describe('Integration', function () {
             })
         })
 
+        it('rejects target promise if callback throws error', function () {
+          var error = new Error()
+          var callback = Sinon.stub().throws(error)
+          var promise = delay(10, callback)
+          clock.next()
+          return expect(promise).to.eventually.be.rejectedWith(error)
+        })
+
         it('creates delayed promise if no callback is specified', function () {
           var promise = delay(1)
           clock.next()
