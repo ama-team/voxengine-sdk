@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Timeouts for HTTP clients & integration for revamped Slf4j
+- .Concurrent.Future class
+- .Concurrent.timeout functions
+- .Concurrent.TaskQueue class
 - Slf4j now provides static methods to create and manage loggers
 ### Changed
 - Slf4j Factory has been substituted with Context class
