@@ -68,6 +68,18 @@ describe('Integration', function () {
                 expect(transport.getCall(0).args[0]).to.eq(resource)
               })
           })
+
+          it('accepts string as argument', function () {
+            var transport = transportFactory({code: 200})
+            var url = 'http://localhost'
+            var client = new Rest(url, transport)
+            return client
+              .request(Method.Get, '/')
+              .then(function () {
+                expect(transport.callCount).to.eq(1)
+                expect(transport.getCall(0).args[0]).to.startWith(url)
+              })
+          })
         })
 
         describe('#execute', function () {
