@@ -275,7 +275,11 @@ SDK.Concurrent.timeout(perfectMatch, 10000)
 ```
 
 The `TimeoutException` used to reject such promise can be located as
-`SDK.Concurrent.TimeoutException`
+`SDK.Concurrent.TimeoutException`. Resulting promise also has 
+`#cancel(silent)` method that allows to clear internal timeout id.
+Silent parameter defines whether it it will be cancelled silently 
+(pretending that there never was a timeout) or with 
+CancellationException.
 
 ## delay
 
@@ -307,6 +311,10 @@ Promise.race(toneDetection, timeBound).then(function() {
 })
 ```
 
+Delay function result has `#cancel(silent)` method as well that will
+either instantly resolve delay or reject promise with 
+CancellationException depending on `silent` parameter.
+
 ## throttle
 
 The last helper function prevents promise from resolving too fast. It
@@ -318,6 +326,8 @@ logger.info('Emulating hard work so our clients would think we\'re smart')
 var balance = rest.get('/users/' + id + '/balance')
 var throttled = SDK.Concurrent.throttle(balance, 10000)
 ```
+
+Throttle function result provides similar `#cancel(silent)` method.
 
 ## TaskQueue
 
