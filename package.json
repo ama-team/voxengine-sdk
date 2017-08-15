@@ -62,6 +62,10 @@
     "globals": [
       "Logger",
       "Net"
+    ],
+    "ignore": [
+      "examples/*/node_modules",
+      "examples/*/dist"
     ]
   }
 }
