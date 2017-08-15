@@ -4,8 +4,12 @@ npm-debug.log
 test
 .gitignore
 
+# Examples
+examples
+
 # Build-related files
 build
+tmp
 circle.yml
 .istanbul.yml
 
