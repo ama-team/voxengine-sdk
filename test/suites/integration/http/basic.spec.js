@@ -63,6 +63,17 @@ describe('Integration', function () {
                 expect(transport.getCall(0).args[0]).to.endWith(path)
               })
           })
+
+          it('accepts string as argument', function () {
+            var url = 'http://localhost'
+            var client = new Client(url, transport)
+            return client
+              .request(Method.Get, '/')
+              .then(function () {
+                expect(transport.callCount).to.eq(1)
+                expect(transport.getCall(0).args[0]).to.startWith(url)
+              })
+          })
         })
 
         describe('#request', function () {
