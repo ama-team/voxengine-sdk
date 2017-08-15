@@ -167,6 +167,10 @@ var settings = {
     logger: {
       level: SDK.Logger.Level.Info,
       name: 'custom-name',
+      // mapping diagnostic context as described above
+      mdc: {
+        entity: 'call#123'
+      },
       instance: new MyCustomLogger()
     }
 };

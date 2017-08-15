@@ -328,6 +328,12 @@ describe('Integration', function () {
             var mockingbird = {}
             expect(Slf4j.factory({instance: mockingbird})).to.eq(mockingbird)
           })
+
+          it('allows setting mapping diagnostic context', function () {
+            var mdc = {alpha: 'beta'}
+            var logger = Slf4j.factory({mdc: mdc})
+            expect(logger.detachAll()).to.deep.eq(mdc)
+          })
         })
       })
     })
