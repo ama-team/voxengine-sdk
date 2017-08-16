@@ -124,7 +124,7 @@ describe('Integration', function () {
             var nextFuture = future.then(null, function () {})
             expect(nextFuture).not.to.eq(future)
             future.resolve(value)
-            expect(nextFuture.getValue()).to.equal(value)
+            expect(nextFuture).to.eventually.equal(value)
           })
 
           it('passes error through if no rejection handler has been set', function () {
@@ -135,7 +135,7 @@ describe('Integration', function () {
             nextFuture.then(null, function () {})
             expect(nextFuture).not.to.eq(future)
             future.reject(value)
-            expect(nextFuture.getValue()).to.equal(value)
+            expect(nextFuture).to.eventually.be.rejectedWith(value)
           })
         })
 
@@ -180,7 +180,7 @@ describe('Integration', function () {
             })
             var future = Future.wrap(promise)
             // preventing unhandled promise rejection
-            future.then(null, function () {})
+            promise.then(null, function () {})
             promise
               .then(branchStopper, function () {
                 future.reject([value])

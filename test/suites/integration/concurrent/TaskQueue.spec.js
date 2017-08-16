@@ -171,6 +171,7 @@ describe('Integration', function () {
           })
 
           it('stops task processing after current task completion', function () {
+            // TODO: this doesn't actually verify anything
             var queue = TaskQueue.started()
             var barrier = new Future()
             var invoked = Sinon.spy(function () { return barrier })
@@ -178,13 +179,9 @@ describe('Integration', function () {
             var paused = false
             queue.push(invoked)
             queue.push(suppressed)
-            var pause = queue.pause()
-            pause.then(function () { paused = true })
+            var pause = queue.pause().then(function () { paused = true })
             barrier.resolve()
-            var future = new Promise(function (resolve) {
-              setTimeout(resolve, 1)
-            })
-            return future
+            return pause
               .then(function () {
                 expect(invoked.callCount).to.eq(1)
                 expect(suppressed.callCount).to.eq(0)

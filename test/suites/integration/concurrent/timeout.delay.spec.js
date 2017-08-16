@@ -11,21 +11,10 @@ describe('Integration', function () {
   describe('/concurrent', function () {
     describe('/timeout.js', function () {
       describe('.delay', function () {
-        var clock
-
-        beforeEach(function () {
-          clock = Sinon.useFakeTimers()
-        })
-
-        afterEach(function () {
-          clock.restore()
-        })
-
         it('delays processing of specified code', function () {
           var callback = Sinon.stub()
-          var delayed = delay(10, callback)
+          var delayed = delay(0, callback)
           expect(callback.callCount).to.eq(0)
-          clock.next()
           return delayed
             .then(function () {
               expect(callback.callCount).to.eq(1)
@@ -35,15 +24,12 @@ describe('Integration', function () {
         it('rejects target promise if callback throws error', function () {
           var error = new Error()
           var callback = Sinon.stub().throws(error)
-          var promise = delay(10, callback)
-          clock.next()
+          var promise = delay(0, callback)
           return expect(promise).to.eventually.be.rejectedWith(error)
         })
 
         it('creates delayed promise if no callback is specified', function () {
-          var promise = delay(1)
-          clock.next()
-          return promise
+          return expect(delay(0)).to.eventually.be.undefined
         })
 
         it('provides #cancel(false) method for explicit cancellation', function () {
