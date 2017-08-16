@@ -252,12 +252,12 @@ describe('Integration', function () {
           })
 
           it('instantly returns true for functionally resolved Future', function () {
-            var future = new Future(function (resolve) { resolve() });
+            var future = new Future(function (resolve) { resolve() })
             expect(future.getStatus()).to.be.true
           })
 
           it('instantly returns false for functionally rejected Future', function () {
-            var future = new Future(function (_, reject) { reject() });
+            var future = new Future(function (_, reject) { reject() })
             expect(future.getStatus()).to.be.false
           })
         })
