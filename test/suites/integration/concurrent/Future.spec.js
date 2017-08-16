@@ -7,6 +7,7 @@ var Chai = require('chai')
 var expect = Chai.expect
 
 Chai.use(require('chai-as-promised'))
+Chai.use(require('chai-string'))
 
 var branchStopper = function () {
   throw new Error('Unexpected branch execution')
@@ -64,11 +65,9 @@ describe('Integration', function () {
         })
 
         describe('#then', function () {
-          it('composes new Future', function () {
+          it('returns the very same instance if both handlers are null', function () {
             var future = new Future()
-            var nextFuture = future.then()
-            expect(nextFuture).to.be.instanceOf(Future)
-            expect(nextFuture).not.to.equal(future)
+            expect(future.then()).to.equal(future)
           })
 
           it('invokes resolution handler when fulfilled', function () {
@@ -118,6 +117,26 @@ describe('Integration', function () {
               expect(handler.getCall(0).args[0]).to.equal(value)
             })
           })
+
+          it('passes value through if no fulfillment handler has been set', function () {
+            var value = {x: 12}
+            var future = new Future()
+            var nextFuture = future.then(null, function () {})
+            expect(nextFuture).not.to.eq(future)
+            future.resolve(value)
+            expect(nextFuture.getValue()).to.equal(value)
+          })
+
+          it('passes error through if no rejection handler has been set', function () {
+            var value = {x: 12}
+            var future = new Future()
+            var nextFuture = future.then(function () {}, null)
+            // preventing unhandled rejections
+            nextFuture.then(null, function () {})
+            expect(nextFuture).not.to.eq(future)
+            future.reject(value)
+            expect(nextFuture.getValue()).to.equal(value)
+          })
         })
 
         describe('.resolve', function () {
@@ -160,6 +179,8 @@ describe('Integration', function () {
               reject(value)
             })
             var future = Future.wrap(promise)
+            // preventing unhandled promise rejection
+            future.then(null, function () {})
             promise
               .then(branchStopper, function () {
                 future.reject([value])
@@ -206,6 +227,54 @@ describe('Integration', function () {
             first.resolve(value)
             second.reject()
             return expect(result).to.eventually.equal(value)
+          })
+        })
+
+        describe('#getValue', function () {
+          it('instantly returns resolved value', function () {
+            var value = {x: 12}
+            expect(Future.resolve(value).getValue()).to.equal(value)
+          })
+
+          it('instantly returns rejected value', function () {
+            var value = {x: 12}
+            expect(Future.reject(value).getValue()).to.equal(value)
+          })
+        })
+
+        describe('#getStatus', function () {
+          it('instantly returns true for externally resolved Future', function () {
+            expect(new Future().resolve().getStatus()).to.be.true
+          })
+
+          it('instantly returns false for externally rejected Future', function () {
+            expect(new Future().reject().getStatus()).to.be.false
+          })
+
+          it('instantly returns true for functionally resolved Future', function () {
+            var future = new Future(function (resolve) { resolve() });
+            expect(future.getStatus()).to.be.true
+          })
+
+          it('instantly returns false for functionally rejected Future', function () {
+            var future = new Future(function (_, reject) { reject() });
+            expect(future.getStatus()).to.be.false
+          })
+        })
+
+        describe('#toString', function () {
+          it('reports pending status', function () {
+            expect(new Future().toString()).to.contain('pending')
+          })
+
+          it('reports resolved status', function () {
+            var string = new Future().resolve('yay!').toString()
+            expect(string).to.contain('resolved')
+          })
+
+          it('reports rejected status', function () {
+            var string = new Future().reject(new Error()).toString()
+            expect(string).to.contain('rejected')
           })
         })
       })
