@@ -99,6 +99,17 @@ describe('Integration', function () {
           clock.tick(15)
           return wrapped
         })
+
+        it('allows to set custom callback', function () {
+          var value = {x: 12}
+          var callback = function (resolve) {
+            resolve(value)
+          }
+          var promise = new Promise(function () {})
+          var wrapped = timeout(promise, 1, callback)
+          clock.next()
+          return expect(wrapped).to.eventually.equal(value)
+        })
       })
     })
   })
