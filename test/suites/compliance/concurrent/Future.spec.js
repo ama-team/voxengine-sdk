@@ -1,13 +1,16 @@
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
 
-var Future = require('../../../../lib').Concurrent.Future
+var Future = require('../../../../lib/index').Concurrent.Future
+var Status = Future.Status
 var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
 
 Chai.use(require('chai-as-promised'))
 Chai.use(require('chai-string'))
+
+Future.debugMode = true
 
 var branchStopper = function () {
   throw new Error('Unexpected branch execution')
@@ -52,6 +55,7 @@ describe('Integration', function () {
             var future = new Future()
             var error = new Error()
             future.reject(error)
+            expect(future.getValue()).to.eq(error)
             return expect(future).to.eventually.be.rejectedWith(error)
           })
 
@@ -72,13 +76,16 @@ describe('Integration', function () {
 
           it('invokes resolution handler when fulfilled', function () {
             var future = new Future()
-            var handler = Sinon.stub()
+            var handler = Sinon.spy(function (value) {
+              return value
+            })
             var nextFuture = future.then(handler)
             var value = {value: 12}
             future.resolve(value)
-            return nextFuture.then(function () {
+            return nextFuture.then(function (arg) {
               expect(handler.calledOnce).to.be.true
               expect(handler.getCall(0).args[0]).to.equal(value)
+              expect(arg).to.equal(value)
             })
           })
 
@@ -86,36 +93,47 @@ describe('Integration', function () {
             var future = new Future()
             var value = {value: 12}
             future.resolve(value)
-            var handler = Sinon.stub()
+            var handler = Sinon.spy(function (value) {
+              return value
+            })
             var nextFuture = future.then(handler)
-            return nextFuture.then(function () {
+            return nextFuture.then(function (arg) {
               expect(handler.calledOnce).to.be.true
               expect(handler.getCall(0).args[0]).to.equal(value)
+              expect(arg).to.equal(value)
             })
           })
 
           it('invokes rejection handler when rejected', function () {
             var future = new Future()
-            var handler = Sinon.stub()
-            var nextFuture = future.then(null, handler)
-            var value = {value: 12}
-            future.reject(value)
-            return nextFuture.then(function () {
-              expect(handler.calledOnce).to.be.true
-              expect(handler.getCall(0).args[0]).to.equal(value)
+            var handler = Sinon.spy(function (error) {
+              throw error
             })
+            var nextFuture = future.then(null, handler)
+            var value = new Error()
+            future.reject(value)
+            return nextFuture
+              .then(branchStopper, function (arg) {
+                expect(handler.calledOnce).to.be.true
+                expect(handler.getCall(0).args[0]).to.equal(value)
+                expect(arg).to.equal(value)
+              })
           })
 
           it('invokes rejection handler even if set after rejection', function () {
             var future = new Future()
-            var value = {value: 12}
+            var value = new Error()
             future.reject(value)
-            var handler = Sinon.stub()
-            var nextFuture = future.then(null, handler)
-            return nextFuture.then(function () {
-              expect(handler.calledOnce).to.be.true
-              expect(handler.getCall(0).args[0]).to.equal(value)
+            var handler = Sinon.spy(function (error) {
+              throw error
             })
+            var nextFuture = future.then(null, handler)
+            return nextFuture
+              .then(branchStopper, function (arg) {
+                expect(handler.calledOnce).to.be.true
+                expect(handler.getCall(0).args[0]).to.equal(value)
+                expect(arg).to.equal(value)
+              })
           })
 
           it('passes value through if no fulfillment handler has been set', function () {
@@ -148,7 +166,7 @@ describe('Integration', function () {
 
         describe('.reject', function () {
           it('returns rejected promise', function () {
-            var value = {x: 12}
+            var value = new Error()
             var future = Future.reject(value)
             return expect(future).to.eventually.be.rejectedWith(value)
           })
@@ -174,18 +192,21 @@ describe('Integration', function () {
           })
 
           it('catches rejected Promise value', function () {
-            var value = {x: 12}
-            var promise = new Promise(function (resolve, reject) {
-              reject(value)
-            })
+            var value = new Error()
+            var promise = Promise.reject(value)
             var future = Future.wrap(promise)
-            // preventing unhandled promise rejection
-            promise.then(null, function () {})
-            promise
-              .then(branchStopper, function () {
-                future.reject([value])
-              })
-            return expect(future).to.eventually.be.rejectedWith(value)
+            var wrapped = future.then(branchStopper, function () {
+              future.reject([value])
+              return future.then(branchStopper, null)
+            })
+            return expect(wrapped).to.eventually.be.rejectedWith(value)
+          })
+
+          it('doesn\'t resolve itself', function () {
+            var future = new Future()
+            var wrapper = future.then(function () { return future })
+            future.resolve()
+            return expect(wrapper).to.eventually.be.rejectedWith(TypeError)
           })
         })
 
@@ -211,7 +232,7 @@ describe('Integration', function () {
             var value = {x: 12}
             var result = new Future()
             Future.race([]).then(function () {
-              result.reject()
+              result.reject(new Error())
             })
             setTimeout(function () {
               result.resolve(value)
@@ -225,7 +246,7 @@ describe('Integration', function () {
             var second = new Future()
             var result = Future.race([first, second])
             first.resolve(value)
-            second.reject()
+            second.reject(new Error())
             return expect(result).to.eventually.equal(value)
           })
         })
@@ -243,38 +264,42 @@ describe('Integration', function () {
         })
 
         describe('#getStatus', function () {
-          it('instantly returns true for externally resolved Future', function () {
-            expect(new Future().resolve().getStatus()).to.be.true
+          it('instantly returns Fulfilled for externally resolved Future', function () {
+            expect(new Future().resolve().getStatus()).to.eq(Status.Fulfilled)
           })
 
-          it('instantly returns false for externally rejected Future', function () {
-            expect(new Future().reject().getStatus()).to.be.false
+          it('instantly returns Rejected for externally rejected Future', function () {
+            var future = new Future().reject(new Error())
+            expect(future.getStatus()).to.eq(Status.Rejected)
           })
 
-          it('instantly returns true for functionally resolved Future', function () {
+          it('instantly returns Fulfilled for functionally resolved Future', function () {
             var future = new Future(function (resolve) { resolve() })
-            expect(future.getStatus()).to.be.true
+            expect(future.getStatus()).to.eq(Status.Fulfilled)
           })
 
-          it('instantly returns false for functionally rejected Future', function () {
+          it('instantly returns Rejected for functionally rejected Future', function () {
             var future = new Future(function (_, reject) { reject() })
-            expect(future.getStatus()).to.be.false
+            expect(future.getStatus()).to.eq(Status.Rejected)
           })
         })
 
         describe('#toString', function () {
           it('reports pending status', function () {
-            expect(new Future().toString()).to.contain('pending')
+            var status = Status.name(Status.Pending)
+            expect(new Future().toString()).to.contain(status)
           })
 
           it('reports resolved status', function () {
             var string = new Future().resolve('yay!').toString()
-            expect(string).to.contain('resolved')
+            var status = Status.name(Status.Fulfilled)
+            expect(string).to.contain(status)
           })
 
           it('reports rejected status', function () {
             var string = new Future().reject(new Error()).toString()
-            expect(string).to.contain('rejected')
+            var status = Status.name(Status.Rejected)
+            expect(string).to.contain(status)
           })
         })
       })

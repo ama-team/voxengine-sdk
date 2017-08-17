@@ -14,7 +14,7 @@ var metadataDirectory = artifactDirectory + '/metadata'
 var allureMetadataDirectory = metadataDirectory + '/allure'
 var coverageMetadataDirectory = metadataDirectory + '/coverage'
 
-var suites = ['unit', 'integration']
+var suites = ['unit', 'compliance', 'integration']
 
 var execute = function (command, options) {
   return new Promise(function (resolve, reject) {
@@ -151,7 +151,8 @@ namespace('test', function () {
           mochaJunitReporterReporterOptions: {
             mochaFile: metadataDirectory + '/junit/' + suite + '/TEST-junit.xml'
           }
-        }
+        },
+        timeout: 200
       }
       if (regexp) {
         options['grep'] = new RegExp(regexp, 'i')
