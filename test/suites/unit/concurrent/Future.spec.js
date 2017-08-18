@@ -16,7 +16,7 @@ var branchStopper = function () {
   throw new Error('Unexpected branch execution')
 }
 
-describe('Integration', function () {
+describe('Unit', function () {
   describe('/concurrent', function () {
     describe('/Future.js', function () {
       describe('Future', function () {
@@ -204,7 +204,7 @@ describe('Integration', function () {
 
           it('doesn\'t resolve itself', function () {
             var future = new Future()
-            var wrapper = future.then(function () { return future })
+            var wrapper = future.then(function () { return wrapper })
             future.resolve()
             return expect(wrapper).to.eventually.be.rejectedWith(TypeError)
           })
