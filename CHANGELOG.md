@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2017-08-21
 ### Added
 - Timeouts for HTTP clients & integration for revamped Slf4j
 - Added Promise-compatible .Concurrent.Future class
