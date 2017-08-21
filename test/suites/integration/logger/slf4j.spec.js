@@ -334,6 +334,11 @@ describe('Integration', function () {
             var logger = Slf4j.factory({mdc: mdc})
             expect(logger.detachAll()).to.deep.eq(mdc)
           })
+
+          it('recognizes logger instance passed instead of options', function () {
+            var logger = Slf4j.create(loggerName)
+            expect(Slf4j.factory(logger)).to.equal(logger)
+          })
         })
       })
     })
