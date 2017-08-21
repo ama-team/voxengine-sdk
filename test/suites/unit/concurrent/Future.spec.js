@@ -155,6 +155,48 @@ describe('Unit', function () {
             future.reject(value)
             expect(nextFuture).to.eventually.be.rejectedWith(value)
           })
+
+          it('correctly inherits result from another future', function () {
+            var value = {x: 12}
+            var source = Future.resolve(value)
+            return expect(Future.resolve(source).getValue()).to.equal(value)
+          })
+
+          it('correctly waits for result for another future', function () {
+            var value = {x: 12}
+            var source = new Future()
+            var future = Future.resolve(source)
+            source.resolve(value)
+            return expect(future).to.eventually.equal(value)
+          })
+
+          it('doesn\'t fulfill twice', function () {
+            var valueA = {x: 12}
+            var valueB = {x: 13}
+            var source = Future.resolve()
+            var mediator = {
+              then: function (resolvePromise) {
+                resolvePromise(valueA)
+                resolvePromise(valueB)
+              }
+            }
+            var future = source.then(function () { return mediator })
+            return expect(future).to.eventually.eq(valueA)
+          })
+
+          it('doesn\'t reject twice', function () {
+            var errorA = new Error('A')
+            var errorB = new Error('B')
+            var source = Future.reject()
+            var mediator = {
+              then: function (_, rejectPromise) {
+                rejectPromise(errorA)
+                rejectPromise(errorB)
+              }
+            }
+            var future = source.then(null, function () { return mediator })
+            return expect(future).to.eventually.be.rejectedWith(errorA)
+          })
         })
 
         describe('.resolve', function () {
@@ -300,6 +342,20 @@ describe('Unit', function () {
             var string = new Future().reject(new Error()).toString()
             var status = Status.name(Status.Rejected)
             expect(string).to.contain(status)
+          })
+        })
+
+        describe('#isRejected', function () {
+          it('instantly returns true for rejected Future', function () {
+            expect(Future.reject().isRejected()).to.be.true
+          })
+
+          it('instantly returns false for pending Future', function () {
+            expect(new Future().isRejected()).to.be.false
+          })
+
+          it('instantly returns false for resolved Future', function () {
+            expect(Future.resolve().isRejected()).to.be.false
           })
         })
       })

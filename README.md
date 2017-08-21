@@ -258,7 +258,13 @@ var Future = SDK.Concurrent.Future
 var race = Future.race([new Future(), new Future()])
 race.resolve('hijack')
 race.reject('will be ignored')
+var future = new Future(function (resolve, reject) {
+  Math.random() > 0.5 ? resolve() : reject()
+})
 ```
+
+Future passes all Promises/A+ 
+[compliance tests](https://github.com/promises-aplus/promises-tests).
 
 ## timeout
 
