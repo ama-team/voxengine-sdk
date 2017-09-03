@@ -3,6 +3,7 @@ node_modules
 npm-debug.log
 test
 .gitignore
+.npmignore
 
 # Examples
 examples
@@ -12,6 +13,8 @@ build
 tmp
 circle.yml
 .istanbul.yml
+.scrutinizer.yml
+Jakefile
 
 # IDE Files
 .idea

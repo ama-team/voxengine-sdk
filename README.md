@@ -4,7 +4,7 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
 [![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=master)
 [![Code Climate](https://img.shields.io/codeclimate/github/ama-team/voxengine-sdk.svg?style=flat-square)](https://codeclimate.com/github/ama-team/voxengine-sdk)
-[![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/master.svg?style=flat-square)](scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/master)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/master.svg?style=flat-square)](https://scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/master)
 
 This repository contains simple SDK to ease development of VoxImplant 
 scenarios. It has:
@@ -459,7 +459,7 @@ that could be devoted to this project.
 
 [![CircleCI](https://img.shields.io/circleci/project/github/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://circleci.com/gh/ama-team/voxengine-sdk)
 [![Coveralls](https://img.shields.io/coveralls/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://coveralls.io/github/ama-team/voxengine-sdk?branch=dev)
-[![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/dev.svg?style=flat-square)](scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/dev)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/ama-team/voxengine-sdk/dev.svg?style=flat-square)](https://scrutinizer-ci.com/g/ama-team/voxengine-sdk/issues/dev)
 
   [allure-commandline]: https://github.com/allure-framework/allure2
   [@definitions]: https://github.com/ama-team/voxengine-definitions
