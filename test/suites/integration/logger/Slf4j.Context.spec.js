@@ -95,6 +95,21 @@ describe('Integration', function () {
               context.create(name).info('test')
             })
           })
+
+          it('can be instantiated without global.Logger', function () {
+            var existed = global.hasOwnProperty('Logger')
+            var stash = global.Logger
+            after(function () {
+              if (existed) {
+                global.Logger = stash
+              }
+            })
+            var lambda = function () {
+              var context = new Context()
+              context.reset()
+            }
+            expect(lambda).not.to.throw()
+          })
         })
       })
     })
