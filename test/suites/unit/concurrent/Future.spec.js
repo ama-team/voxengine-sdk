@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
 
-var Future = require('../../../../lib/index').Concurrent.Future
+var Future = require('../../../../lib/concurrent/Future').Future
 var Status = Future.Status
 var Sinon = require('sinon')
 var Chai = require('chai')
@@ -9,8 +9,6 @@ var expect = Chai.expect
 
 Chai.use(require('chai-as-promised'))
 Chai.use(require('chai-string'))
-
-Future.debugMode = true
 
 var branchStopper = function () {
   throw new Error('Unexpected branch execution')
