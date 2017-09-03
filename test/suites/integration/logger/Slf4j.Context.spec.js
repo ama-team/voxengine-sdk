@@ -15,7 +15,7 @@ Chai.use(require('chai-string'))
 
 describe('Integration', function () {
   describe('/logger', function () {
-    describe('/slf4j.js', function () {
+    describe('/Slf4j.js', function () {
       describe('.Slf4j', function () {
         describe('.Context', function () {
           var writer

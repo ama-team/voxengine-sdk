@@ -50,9 +50,43 @@ call.addEventListener(CallEvents.Connected, function () {
 
 This logger provides `.trace()`, `.debug()`, `.info()`, `.notice()`, 
 `.warn()`, `.error()` and `.log(Logger.Level.*, pattern, substitutions...)` 
-methods to print things. Also there are `.attach(key, value)`, 
-`.detach(key)`, `.attachAll(object)` and `.detachAll()` methods for
-functionality known as Mapped Diagnostic Context in Logback:
+methods to print things. 
+
+### Substitutions
+
+This logger uses following algorithm for injecting provided arguments:
+
+- While another placeholder is available, replace it with short 
+representation of an argument
+- When there are no more placeholders, jump to new line and print
+long argument representation
+
+Most of the types, there is no difference between two representations.
+However,
+
+- Custom `.toString()` implementation will be used in short 
+representations
+- If not provided with custom `.toString()`, errors will be
+represented as `<$.name: $.message>` in short mode
+- Objects are represented using JSON in long representations
+- Long error representations are basically concatenation of
+short representation with stack
+
+```js
+logger.error('{} was caused by:', new Error('alpha'), new Error('beta'))
+// ERROR logger.name: <Error: alpha> was caused by:
+// <Error: beta>
+// Stack:
+//   ...
+````
+
+So in order to see stack traces you need to have at most as many
+placeholders as there are arguments before error.
+
+### MDC 
+There are `.attach(key, value)`, `.detach(key)`, `.attachAll(object)` 
+and `.detachAll()` methods for functionality known as Mapped Diagnostic
+Context in Logback:
 
 ```js
 logger.attach('id', '123')
@@ -63,13 +97,15 @@ logger.info('Sending custom event')
 This may help you if you have similar logging output but need to 
 distinguish components one from another.
 
+### Configuring
+
 Every logger may be created with particular level and writer, as
 well as swap them in runtime:
 
 ```js
 // please note that Logger symbol (last parameter) comes from VoxEngine, not from SDK
-var logger = Slf4j.create('logger.name', SDK.Logger.Level.Info, Logger)
-logger.setLevel(SDK.Logger.Level.Info)
+var logger = Slf4j.create('logger.name', Slf4j.Level.Info, Logger)
+logger.setLevel(Slf4j.Level.Notice)
 logger.setLevel('warn')
 logger.setWriter(Logger)
 ```

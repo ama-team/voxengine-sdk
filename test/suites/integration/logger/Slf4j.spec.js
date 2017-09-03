@@ -16,7 +16,7 @@ Chai.use(require('chai-string'))
 
 describe('Integration', function () {
   describe('/logger', function () {
-    describe('/slf4j.js', function () {
+    describe('/Slf4j.js', function () {
       describe('.Slf4j', function () {
         var testMessage = 'Hey there, spectacular'
         var loggerName = 'ama-team.voxengine-sdk.test.spec.logger.slf4j.Slf4j'
@@ -131,25 +131,25 @@ describe('Integration', function () {
             var parameter = null
             logger.log(Level.Error, 'parametrized: {}', parameter)
             var message = writer.write.getCall(0).args[0]
-            expect(message).to.endWith('parametrized: null')
+            expect(message).to.endWith('parametrized: <null>')
           })
 
           it('correctly renders undefined', function () {
             logger.log(Level.Error, 'parametrized: {}', undefined)
             var message = writer.write.getCall(0).args[0]
-            expect(message).to.endWith('parametrized: {undefined}')
+            expect(message).to.endWith('parametrized: <undefined>')
           })
 
           it('correctly renders error', function () {
             var parameter = new Error()
-            var stack = 'superFunc() at file:60:64\nanotherFunc() at file:60:64'
+            var stack = 'superFunc() at file:60:64\r\nanotherFunc() at file:60:64'
             var name = 'TestingException'
             var message = 'An exception has been thrown'
             var expected = [
-              '[ERROR] ' + loggerName + ': Unhandled exception:',
+              'Unhandled exception:',
               name + ': ' + message,
               'Stack:', stack
-            ].join('\n')
+            ].join('\r\n')
             var pattern = 'Unhandled exception:'
 
             parameter.name = name
@@ -157,7 +157,14 @@ describe('Integration', function () {
             parameter.stack = stack
 
             logger.log(Level.Error, pattern, parameter)
-            expect(writer.write.getCall(0).args[0]).to.eq(expected)
+            expect(writer.write.getCall(0).args[0]).to.endWith(expected)
+          })
+
+          it('doesn\'t treat {} replacement as a placeholder', function () {
+            var pattern = '{} and {}'
+            var expectation = '{} and false'
+            logger.log(Level.Error, pattern, {}, false)
+            expect(writer.write.getCall(0).args[0]).to.endWith(expectation)
           })
         })
 
