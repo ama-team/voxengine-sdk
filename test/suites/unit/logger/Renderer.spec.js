@@ -43,8 +43,8 @@ describe('Unit', function () {
           })
 
           it('returns <Function: %name%> for function', function () {
-            var subject = function () {
-            }
+            var subject = function subject () {}
+            Object.defineProperty(subject, 'name', {value: 'subject'})
             var expectation = '<Function: subject>'
             expect(Renderer.any(subject, false)).to.eq(expectation)
             expect(Renderer.any(subject, true)).to.eq(expectation)
@@ -95,9 +95,10 @@ describe('Unit', function () {
             var error = new Error()
             error.name = 'prefix'
             error.message = 'suffix'
-            var expectation = '<suffix: prefix>'
+            var combined = 'prefix: suffix'
+            var expectation = '<' + combined + '>'
             error.toString = function () {
-              return expectation
+              return combined
             }
             expect(Renderer.any(error, false)).to.eq(expectation)
           })
@@ -114,7 +115,7 @@ describe('Unit', function () {
             var error = new Error()
             error.name = 'prefix'
             error.message = 'suffix'
-            var expectation = ['prefix: suffix', 'Stack:', error.stack].join('\r\n')
+            var expectation = ['<prefix: suffix>', 'Stack:', error.stack].join('\r\n')
             expect(Renderer.any(error, true)).to.eq(expectation)
           })
         })

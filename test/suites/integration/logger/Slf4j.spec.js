@@ -147,7 +147,7 @@ describe('Integration', function () {
             var message = 'An exception has been thrown'
             var expected = [
               'Unhandled exception:',
-              name + ': ' + message,
+              '<' + name + ': ' + message + '>',
               'Stack:', stack
             ].join('\r\n')
             var pattern = 'Unhandled exception:'
