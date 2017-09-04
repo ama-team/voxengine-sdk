@@ -320,6 +320,20 @@ SDK.Concurrent.timeout(perfectMatch, 10000)
   })
 ```
 
+Timeout also accepts two more optional arguments, callback and error 
+message:
+
+```js
+var callback = function (resolve, reject, error) {
+  reject(error)
+}
+var message = 'Some %long operation% took %more than it was allowed%'
+SDK.Concurrent.timeout(promise, 10000, callback, message)
+```
+
+Callback will be called only if timeout has been exceeded, and won't
+be called on regular errors.
+
 The `TimeoutException` used to reject such promise can be located as
 `SDK.Concurrent.TimeoutException`. Resulting promise also has 
 `#cancel(silent)` method that allows to clear internal timeout id.
