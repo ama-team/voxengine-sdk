@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.0] - 2017-09-04
+### Changed
+- Concurrent.timeout function now accepts both error message and callback
+- Slf4j now substitutes placeholders with everything, including errors.
+Placeholders are filled with short representations, off-placeholder 
+parameters are using long representations, so in most occasions 
+behavior hasn't changed. See README.md for clarification.
+- Slf4j now uses custom `.toString()` method for representations (if it 
+is present)
+- Slf4j now demands Logger only in the last moment, allowing to 
+instantiate default context and Slf4j itself without `global.Logger`
+being present.
+
+No breaking changes should be introduced by this release, however, 
+too much of internals have been altered for a patch release.
+
 ## [0.3.0] - 2017-08-21
 ### Added
 - Timeouts for HTTP clients & integration for revamped Slf4j
