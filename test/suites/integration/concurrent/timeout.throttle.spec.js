@@ -10,7 +10,24 @@ describe('Integration', function () {
   describe('/concurrent', function () {
     describe('/timeout.js', function () {
       describe('.throttle', function () {
-        it('creates promise that resolves after passed time if it resolved too fast')
+        it('creates promise that resolves after passed time if it resolved too fast', function () {
+          var barriers = {}
+          var promise = Promise.resolve()
+          var alpha = throttle(promise, 2)
+            .then(function () {
+              barriers.alpha = 1
+            })
+          var beta = throttle(promise, 1)
+            .then(function () {
+              barriers.beta = 1
+            })
+          return beta
+            .then(function () {
+              expect(barriers).to.have.property('beta').eq(1)
+              expect(barriers).not.to.have.property('alpha')
+              return alpha
+            })
+        })
 
         it('doesn\'t slow down promise that takes longer that throttle time')
 

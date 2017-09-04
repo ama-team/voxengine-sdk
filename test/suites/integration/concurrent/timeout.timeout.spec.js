@@ -1,13 +1,15 @@
 /* eslint-env mocha */
 
-var Concurrent = require('../../../../lib').Concurrent
-var timeout = Concurrent.timeout
-var TimeoutException = Concurrent.TimeoutException
-var CancellationException = Concurrent.CancellationException
+var Sinon = require('sinon')
 var Chai = require('chai')
 var expect = Chai.expect
 
 Chai.use(require('chai-as-promised'))
+
+var Concurrent = require('../../../../lib').Concurrent
+var timeout = Concurrent.timeout
+var TimeoutException = Concurrent.TimeoutException
+var CancellationException = Concurrent.CancellationException
 
 var branchStopper = function () {
   throw new Error('Unexpected branch execution')
@@ -38,7 +40,17 @@ describe('Integration', function () {
           return expect(wrapped).to.eventually.be.rejectedWith(TimeoutException)
         })
 
-        it('passes provided message to exception', function () {
+        it('allows to set custom callback', function () {
+          var value = {x: 12}
+          var callback = function (resolve) {
+            resolve(value)
+          }
+          var promise = new Promise(function () {})
+          var wrapped = timeout(promise, 0, callback)
+          return expect(wrapped).to.eventually.equal(value)
+        })
+
+        it('uses provided callback as exception message if it is string', function () {
           var message = 'foo'
           var promise = new Promise(function () {})
           var wrapped = timeout(promise, 0, message)
@@ -49,14 +61,19 @@ describe('Integration', function () {
             })
         })
 
-        it('allows to set custom callback', function () {
-          var value = {x: 12}
-          var callback = function (resolve) {
-            resolve(value)
-          }
+        it('allows to set both callback and exception message', function () {
+          var message = 'foo'
           var promise = new Promise(function () {})
-          var wrapped = timeout(promise, 0, callback)
-          return expect(wrapped).to.eventually.equal(value)
+          var callback = Sinon.spy(function (_, reject, error) {
+            reject(error)
+          })
+          var wrapped = timeout(promise, 0, callback, message)
+          return wrapped
+            .then(branchStopper, function (error) {
+              expect(error).to.be.instanceOf(TimeoutException)
+              expect(error.message).to.eq(message)
+              expect(callback.callCount).to.eq(1)
+            })
         })
 
         it('doesn\'t timeout resolved promise', function () {
